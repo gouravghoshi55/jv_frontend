@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function LeadTable({ leads, onAction, actionLabel = "Action", loading, emptyMessage = "No leads found" }) {
+export default function LeadTable({ leads, onAction, onNextAction, actionLabel = "Action", loading, emptyMessage = "No leads found" }) {
   if (loading) {
     return (
       <div className="loading">
@@ -34,6 +34,7 @@ export default function LeadTable({ leads, onAction, actionLabel = "Action", loa
               <th>Location</th>
               <th>Contact</th>
               <th>Concern Person</th>
+              {onNextAction && <th>NAP</th>}
               {onAction && <th>Action</th>}
             </tr>
           </thead>
@@ -53,6 +54,17 @@ export default function LeadTable({ leads, onAction, actionLabel = "Action", loa
                 <td style={{ maxWidth: 180 }}>{lead.location}</td>
                 <td>{lead.contactInfo}</td>
                 <td>{lead.concernPerson}</td>
+                {onNextAction && (
+                  <td>
+                    <button
+                      className="btn btn-nap"
+                      onClick={() => onNextAction(lead)}
+                      title="Raise Next Action Plan Ticket"
+                    >
+                      <i className="bi bi-ticket-perforated"></i>
+                    </button>
+                  </td>
+                )}
                 {onAction && (
                   <td>
                     <button className="btn btn-action" onClick={() => onAction(lead)}>

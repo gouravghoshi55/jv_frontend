@@ -8,6 +8,11 @@ import NotQualifiedPage from "./pages/NotQualifiedPage.jsx";
 import ColdLeadsPage from "./pages/ColdLeadsPage.jsx";
 import FMSPage from "./pages/FMSPage.jsx";
 import DonePage from "./pages/DonePage.jsx";
+import NextActionPlanPage from './pages/NextActionPlanPage';
+import NextActionModal from './components/NextActionModal';
+import NotificationPanel from './components/NotificationPanel';
+import TicketUpdateModal from './components/TicketUpdateModal';
+
 
 const ALL_TABS = [
   { id: "pipeline", label: "Pipeline", icon: "bi-funnel", sheetName: "PIPELINE" },
@@ -15,6 +20,7 @@ const ALL_TABS = [
   { id: "cold-leads", label: "Cold Leads", icon: "bi-snow2", sheetName: "COLD LEADS" },
   { id: "fms", label: "FMS", icon: "bi-diagram-3", sheetName: "FMS" },
   { id: "done", label: "Done", icon: "bi-check-circle", sheetName: "DONE" },
+  { id: "next-action-plan", label: "Next Action Plan", icon: "bi-ticket-perforated", sheetName: "NEXT ACTION PLAN" },
 ];
 
 function getVisibleTabs(user) {
@@ -46,6 +52,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("");
   const [syncing, setSyncing] = useState(false);
   const queryClient = useQueryClient();
+  const [showNapModal, setShowNapModal] = useState(false);
+  const [napLead, setNapLead] = useState(null);
+  const [napSource, setNapSource] = useState('');
+  const [napStep, setNapStep] = useState('');
+  const [showTicketUpdate, setShowTicketUpdate] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("jv_user");
@@ -104,6 +116,18 @@ export default function App() {
     }
   };
 
+  const handleNextAction = (lead, sourceTab, stepName = '') => {
+    setNapLead(lead);
+    setNapSource(sourceTab);
+    setNapStep(stepName);
+    setShowNapModal(true);
+  };
+
+  const handleNotifTicketClick = (ticket) => {
+    setSelectedTicket(ticket);
+    setShowTicketUpdate(true);
+  };
+
   if (!authChecked) {
     return (
       <div className="login-container">
@@ -124,15 +148,17 @@ export default function App() {
   const renderPage = () => {
     switch (activeTab) {
       case "pipeline":
-        return <PipelinePage />;
+        return <PipelinePage onNextAction={(lead) => handleNextAction(lead, 'Pipeline')} />;
       case "not-qualified":
-        return <NotQualifiedPage />;
+        return <NotQualifiedPage onNextAction={(lead) => handleNextAction(lead, 'Not Qualified')} />;
       case "cold-leads":
-        return <ColdLeadsPage />;
+        return <ColdLeadsPage onNextAction={(lead) => handleNextAction(lead, 'Cold Leads')} />;
       case "fms":
         return <FMSPage />;
       case "done":
         return <DonePage />;
+      case "next-action-plan":
+        return <NextActionPlanPage currentUser={user} />;
       default:
         return visibleTabs.length > 0 ? (
           <div className="empty-state">
@@ -174,6 +200,12 @@ export default function App() {
             )}
           </button>
 
+          {/* Notification Bell — shows assigned tickets to logged-in user */}
+          <NotificationPanel
+            currentUser={user}
+            onTicketClick={handleNotifTicketClick}
+          />
+
           <div className="user-info">
             <div className="user-avatar">
               {user.userName.charAt(0).toUpperCase()}
@@ -203,6 +235,24 @@ export default function App() {
       </nav>
 
       <main className="page-content">{renderPage()}</main>
+
+      {/* Next Action Plan — Raise Ticket Modal */}
+      <NextActionModal
+        show={showNapModal}
+        onClose={() => setShowNapModal(false)}
+        lead={napLead}
+        sourceTab={napSource}
+        stepName={napStep}
+        currentUser={user}
+      />
+
+      {/* Ticket Update Modal — opened from Notification Panel */}
+      <TicketUpdateModal
+        show={showTicketUpdate}
+        onClose={() => { setShowTicketUpdate(false); setSelectedTicket(null); }}
+        ticket={selectedTicket}
+        currentUser={user}
+      />
     </div>
   );
 }

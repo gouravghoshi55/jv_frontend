@@ -11,7 +11,7 @@ const STATUS_OPTIONS = [
   { value: "COLD LEADS", label: "Move to Cold Leads" },
 ];
 
-export default function NotQualifiedPage() {
+export default function NotQualifiedPage({ onNextAction }) {
   const [selectedLead, setSelectedLead] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,6 +80,7 @@ export default function NotQualifiedPage() {
         leads={filteredLeads}
         loading={isLoading}
         onAction={setSelectedLead}
+        onNextAction={onNextAction}
         actionLabel="Update"
         emptyMessage="No leads in Not Qualified."
       />

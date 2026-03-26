@@ -12,7 +12,7 @@ const STATUS_OPTIONS = [
   { value: "NOT QUALIFIED LEADS", label: "Not Qualified Leads" },
 ];
 
-export default function PipelinePage() {
+export default function PipelinePage({ onNextAction }) {
   const [selectedLead, setSelectedLead] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,7 +42,6 @@ export default function PipelinePage() {
       const res = await api.post("/pipeline/update", { enqNo, status, remarks });
       toast.success(res.data.message);
       setSelectedLead(null);
-      // Invalidate all queries since lead might move to another sheet
       queryClient.invalidateQueries();
     } catch (err) {
       toast.error("Update failed: " + (err.response?.data?.error || err.message));
@@ -61,7 +60,6 @@ export default function PipelinePage() {
         <span className="badge badge-blue">{filteredLeads.length} leads</span>
       </div>
 
-      {/* Filters */}
       <div className="filter-bar">
         <input
           type="text"
@@ -72,7 +70,6 @@ export default function PipelinePage() {
         />
       </div>
 
-      {/* Error State */}
       {error && (
         <div style={{ color: "var(--accent-red)", padding: 20, textAlign: "center" }}>
           <i className="bi bi-exclamation-triangle" style={{ marginRight: 8 }}></i>
@@ -80,16 +77,15 @@ export default function PipelinePage() {
         </div>
       )}
 
-      {/* Table */}
       <LeadTable
         leads={filteredLeads}
         loading={isLoading}
         onAction={setSelectedLead}
+        onNextAction={onNextAction}
         actionLabel="Update"
         emptyMessage="No leads in pipeline. Click 'Sync Leads' to fetch new leads."
       />
 
-      {/* Action Modal */}
       {selectedLead && (
         <ActionModal
           lead={selectedLead}

@@ -58,6 +58,19 @@ export default function App() {
   const [napStep, setNapStep] = useState('');
   const [showTicketUpdate, setShowTicketUpdate] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("jv_theme") || "dark";
+  });
+
+  // Apply theme on mount and change
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("jv_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("jv_user");
@@ -198,6 +211,15 @@ export default function App() {
                 Sync Leads
               </>
             )}
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            <i className={`bi ${theme === "dark" ? "bi-sun-fill" : "bi-moon-fill"}`}></i>
           </button>
 
           {/* Notification Bell — shows assigned tickets to logged-in user */}

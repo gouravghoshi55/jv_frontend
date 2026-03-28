@@ -45,6 +45,14 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
         if (status === "Completed") {
           payload.status = "Completed";
         }
+        if (status === "Rejected") {
+          if (!doerRemarks || doerRemarks.trim() === "" || doerRemarks === ticket.doerRemarks) {
+            toast.warn("Please provide a reason for rejection in Doer Remarks");
+            setLoading(false);
+            return;
+          }
+          payload.status = "Rejected";
+        }
       }
 
       const res = await api.post("/next-action-plan/update", payload);
@@ -67,17 +75,17 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
 
   const getStatusOptions = () => {
     if (isAdmin) {
-      return ["Open", "PC Confirmed", "In Progress", "Date Revision Requested", "Completed", "Overdue"];
+      return ["Open", "PC Confirmed", "In Progress", "Date Revision Requested", "Completed", "Rejected", "Overdue"];
     }
     if (isAssignedDoer) {
       const current = ticket.status;
       if (current === "PC Confirmed" || current === "In Progress") {
-        return [current, "In Progress", "Date Revision Requested", "Completed"];
+        return [current, "In Progress", "Date Revision Requested", "Completed", "Rejected"];
       }
       if (current === "Date Revision Requested") {
-        return [current, "In Progress", "Completed"];
+        return [current, "In Progress", "Completed", "Rejected"];
       }
-      return [current, "Date Revision Requested", "Completed"];
+      return [current, "Date Revision Requested", "Completed", "Rejected"];
     }
     return [ticket.status];
   };
@@ -89,6 +97,7 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
       "In Progress": "badge-progress",
       "Date Revision Requested": "badge-revision",
       Completed: "badge-completed",
+      Rejected: "badge-rejected",
       Overdue: "badge-overdue",
     };
     return map[s] || "badge-default";
@@ -210,13 +219,17 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
 
             {isAssignedDoer && (
               <div className="form-group">
-                <label>Doer Remarks</label>
+                <label>
+                  Doer Remarks
+                  {status === "Rejected" && <span style={{ color: "var(--accent-red)", marginLeft: 4 }}>* (reason required for rejection)</span>}
+                </label>
                 <textarea
                   value={doerRemarks}
                   onChange={(e) => setDoerRemarks(e.target.value)}
-                  placeholder="Your notes / update..."
+                  placeholder={status === "Rejected" ? "Why are you rejecting this task?..." : "Your notes / update..."}
                   rows={2}
                   className="form-textarea"
+                  style={status === "Rejected" ? { borderColor: "var(--accent-red)" } : {}}
                 />
               </div>
             )}

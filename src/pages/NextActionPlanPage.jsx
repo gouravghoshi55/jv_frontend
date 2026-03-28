@@ -66,6 +66,7 @@ export default function NextActionPlanPage({ currentUser }) {
     inProgress: tickets.filter((t) => t.status === "In Progress").length,
     revision: tickets.filter((t) => t.status === "Date Revision Requested").length,
     completed: tickets.filter((t) => t.status === "Completed").length,
+    rejected: tickets.filter((t) => t.status === "Rejected").length,
     overdue: tickets.filter(isOverdue).length,
   };
 
@@ -76,6 +77,7 @@ export default function NextActionPlanPage({ currentUser }) {
       "In Progress": "badge-progress",
       "Date Revision Requested": "badge-revision",
       Completed: "badge-completed",
+      Rejected: "badge-rejected",
       Overdue: "badge-overdue",
     };
     return map[status] || "badge-default";
@@ -129,6 +131,12 @@ export default function NextActionPlanPage({ currentUser }) {
             <span className="stat-label">Overdue</span>
           </div>
         )}
+        {stats.rejected > 0 && (
+          <div className="stat-card stat-rejected">
+            <span className="stat-number">{stats.rejected}</span>
+            <span className="stat-label">Rejected</span>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -154,6 +162,7 @@ export default function NextActionPlanPage({ currentUser }) {
           <option value="In Progress">In Progress</option>
           <option value="Date Revision Requested">Date Revision Requested</option>
           <option value="Completed">Completed</option>
+          <option value="Rejected">Rejected</option>
           <option value="Overdue">Overdue</option>
         </select>
 

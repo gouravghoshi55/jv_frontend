@@ -38,7 +38,7 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
   };
 
   const activeAssignedCount = assignedToMe.filter(
-    (t) => t.status?.toLowerCase() !== "completed"
+    (t) => t.status?.toLowerCase() !== "completed" && t.status?.toLowerCase() !== "rejected"
   ).length;
 
   const overdueCount = assignedToMe.filter(isOverdue).length;
@@ -50,6 +50,7 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
     inProgress: list.filter((t) => t.status === "In Progress").length,
     revision: list.filter((t) => t.status === "Date Revision Requested").length,
     completed: list.filter((t) => t.status === "Completed").length,
+    rejected: list.filter((t) => t.status === "Rejected").length,
     overdue: list.filter(isOverdue).length,
   });
 
@@ -62,6 +63,7 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
       "In Progress": "bi-arrow-repeat",
       "Date Revision Requested": "bi-calendar-event",
       Completed: "bi-check-circle-fill",
+      Rejected: "bi-x-circle-fill",
       Overdue: "bi-exclamation-triangle-fill",
     };
     return map[status] || "bi-circle";
@@ -74,6 +76,7 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
       "In Progress": "badge-progress",
       "Date Revision Requested": "badge-revision",
       Completed: "badge-completed",
+      Rejected: "badge-rejected",
       Overdue: "badge-overdue",
     };
     return map[status] || "badge-default";
@@ -165,6 +168,12 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
                 <div className="notif-stat">
                   <span className="notif-stat-num" style={{ color: "var(--accent-red)" }}>{stats.overdue}</span>
                   <span className="notif-stat-label">Overdue</span>
+                </div>
+              )}
+              {stats.rejected > 0 && (
+                <div className="notif-stat">
+                  <span className="notif-stat-num" style={{ color: "var(--accent-red)" }}>{stats.rejected}</span>
+                  <span className="notif-stat-label">Rejected</span>
                 </div>
               )}
             </div>

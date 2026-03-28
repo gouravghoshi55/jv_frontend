@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import api from "../api.js";
 
 const FILE_FIELDS = [
-  { key: "mapLocation", label: "Map Location", colIndex: 13 },
   { key: "aks", label: "Aks", colIndex: 14 },
   { key: "khasra", label: "Khasra", colIndex: 15 },
   { key: "oldDocument", label: "Any OLD Document/Layout Plan", colIndex: 16 },
@@ -11,14 +10,16 @@ const FILE_FIELDS = [
 ];
 
 export default function Step2Modal({ show, lead, onClose, onSuccess }) {
+  const [mapLocation, setMapLocation] = useState("");
   const [files, setFiles] = useState({});
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
 
   if (!show || !lead) return null;
 
-  const handleFileChange = (key, file) => {
-    setFiles((prev) => ({ ...prev, [key]: file }));
+  const handleFileChange = (key, fileList) => {
+    // Support multiple files
+    setFiles((prev) => ({ ...prev, [key]: fileList }));
   };
 
   const fileToBase64 = (file) => {
@@ -34,10 +35,10 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
-    const selectedFiles = Object.entries(files).filter(([_, file]) => file);
+    const selectedFiles = Object.entries(files).filter(([_, fileList]) => fileList && fileList.length > 0);
     
-    if (selectedFiles.length === 0) {
-      toast.warn("Please select at least one file to upload");
+    if (selectedFiles.length === 0 && !mapLocation.trim()) {
+      toast.warn("Please provide Map Location link or upload at least one file");
       return;
     }
 
@@ -50,6 +51,8 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
         rowIndex: lead.rowIndex,
         enqNo: lead.enqNo,
         location: lead.location,
+        clientName: lead.clientName,
+        mapLocation: mapLocation.trim(),
       });
 
       if (!initRes.data.success) {
@@ -60,21 +63,25 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
 
       // Step 2: Upload each file
       for (let i = 0; i < selectedFiles.length; i++) {
-        const [key, file] = selectedFiles[i];
+        const [key, fileList] = selectedFiles[i];
         const fieldInfo = FILE_FIELDS.find((f) => f.key === key);
         
-        setProgress(`Uploading ${fieldInfo.label} (${i + 1}/${selectedFiles.length})...`);
+        // Upload all files for this field
+        for (let j = 0; j < fileList.length; j++) {
+          const file = fileList[j];
+          setProgress(`Uploading ${fieldInfo.label} (${j + 1}/${fileList.length})...`);
 
-        const base64 = await fileToBase64(file);
+          const base64 = await fileToBase64(file);
 
-        await api.post("/fms/upload", {
-          rowIndex: lead.rowIndex,
-          folderId: folderId,
-          columnIndex: fieldInfo.colIndex,
-          fileName: `${lead.enqNo}_${fieldInfo.key}.pdf`,
-          fileBase64: base64,
-          mimeType: file.type || "application/pdf",
-        });
+          await api.post("/fms/upload", {
+            rowIndex: lead.rowIndex,
+            folderId: folderId,
+            columnIndex: fieldInfo.colIndex,
+            fileName: file.name,
+            fileBase64: base64,
+            mimeType: file.type || "application/octet-stream",
+          });
+        }
       }
 
       toast.success("Documents uploaded successfully!");
@@ -87,6 +94,12 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
       setUploading(false);
       setProgress("");
     }
+  };
+
+  const getFileNames = (fileList) => {
+    if (!fileList || fileList.length === 0) return "Choose Files";
+    if (fileList.length === 1) return fileList[0].name;
+    return `${fileList.length} files selected`;
   };
 
   return (
@@ -131,11 +144,27 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
             </select>
           </div>
 
+          {/* Map Location - Text Input */}
+          <div className="form-group">
+            <label>
+              <i className="bi bi-geo-alt" style={{ marginRight: 6 }}></i>
+              Map Location (Google Maps Link)
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Paste Google Maps link here..."
+              value={mapLocation}
+              onChange={(e) => setMapLocation(e.target.value)}
+              disabled={uploading}
+            />
+          </div>
+
           {/* File Uploads */}
           <div className="file-uploads">
             <h4 style={{ marginBottom: 12, color: "var(--text-primary)" }}>
-              <i className="bi bi-file-earmark-pdf" style={{ marginRight: 6 }}></i>
-              Upload Documents (PDF)
+              <i className="bi bi-file-earmark" style={{ marginRight: 6 }}></i>
+              Upload Documents (Any file type)
             </h4>
 
             {FILE_FIELDS.map((field) => (
@@ -144,16 +173,16 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
                 <div className="file-input-wrapper">
                   <input
                     type="file"
-                    accept=".pdf"
-                    onChange={(e) => handleFileChange(field.key, e.target.files[0])}
+                    multiple
+                    onChange={(e) => handleFileChange(field.key, e.target.files)}
                     disabled={uploading}
                     id={`file-${field.key}`}
                   />
                   <label htmlFor={`file-${field.key}`} className="file-input-btn">
                     <i className="bi bi-upload"></i>
-                    {files[field.key] ? files[field.key].name : "Choose PDF"}
+                    {getFileNames(files[field.key])}
                   </label>
-                  {files[field.key] && (
+                  {files[field.key] && files[field.key].length > 0 && (
                     <button
                       className="file-clear-btn"
                       onClick={() => handleFileChange(field.key, null)}

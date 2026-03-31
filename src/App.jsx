@@ -167,7 +167,7 @@ export default function App() {
       case "cold-leads":
         return <ColdLeadsPage onNextAction={(lead) => handleNextAction(lead, 'Cold Leads')} />;
       case "fms":
-        return <FMSPage />;
+      return <FMSPage currentUser={user} onNextAction={handleNextAction} />;
       case "done":
         return <DonePage />;
       case "next-action-plan":

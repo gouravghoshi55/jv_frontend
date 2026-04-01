@@ -3,6 +3,8 @@ import Step2Modal from "../components/Step2Modal.jsx";
 import Step3 from "./fms/steps/Step3.jsx";
 import Step4 from "./fms/steps/Step4.jsx";
 import Step5 from "./fms/steps/Step5.jsx";
+import Step6 from "./fms/steps/Step6.jsx";
+import Step7 from "./fms/steps/Step7.jsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../api.js";
 
@@ -12,10 +14,10 @@ const FMS_STEPS = [
   { id: 3, label: "Need Analysis Meeting", icon: "bi-people" },
   { id: 4, label: "Proposal Preparation", icon: "bi-clipboard-data" },
   { id: 5, label: "Proposal", icon: "bi-file-earmark-check" },
-  {}
+  { id: 6, label: "Follow Up", icon: "bi-arrow-repeat" },
+  { id: 7, label: "Agreement", icon: "bi-handshake" },
 ];
 
-// Step 2 columns to display (kept from original)
 const STEP2_COLUMNS = [
   { key: "enqNo", label: "EnQ No" },
   { key: "clientName", label: "Client Name" },
@@ -34,7 +36,6 @@ export default function FMSPage({ currentUser, onNextAction }) {
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
-  // Fetch Step 2 leads (only when activeStep === 2)
   const { data: step2Data, isLoading: step2Loading, error: step2Error } = useQuery({
     queryKey: ["fms-step2"],
     queryFn: () => api.get("/fms/step2").then((r) => r.data),
@@ -44,7 +45,6 @@ export default function FMSPage({ currentUser, onNextAction }) {
 
   const step2Leads = step2Data?.leads || [];
 
-  // Filter Step 2 leads
   const filteredStep2Leads = step2Leads.filter((lead) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -56,98 +56,38 @@ export default function FMSPage({ currentUser, onNextAction }) {
     );
   });
 
-  const handleStep2Action = (lead) => {
-    setSelectedLead(lead);
-    setShowStep2Modal(true);
-  };
+  const handleStep2Action = (lead) => { setSelectedLead(lead); setShowStep2Modal(true); };
+  const handleStep2Success = () => { queryClient.invalidateQueries(["fms-step2"]); queryClient.invalidateQueries(["fms-step3"]); };
 
-  const handleStep2Success = () => {
-    queryClient.invalidateQueries(["fms-step2"]);
-    queryClient.invalidateQueries(["fms-step3"]);
-  };
-
-  // Render step content based on active step
   const renderStepContent = () => {
     switch (activeStep) {
       case 2:
         return (
           <div className="step-content">
-            {/* Search */}
             <div className="filter-bar">
               <div className="search-box">
                 <i className="bi bi-search"></i>
-                <input
-                  type="text"
-                  className="filter-input"
-                  placeholder="Search by EnQ No, client, location..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                {search && (
-                  <button className="search-clear" onClick={() => setSearch("")}>
-                    <i className="bi bi-x"></i>
-                  </button>
-                )}
+                <input type="text" className="filter-input" placeholder="Search by EnQ No, client, location..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                {search && <button className="search-clear" onClick={() => setSearch("")}><i className="bi bi-x"></i></button>}
               </div>
               <span className="result-count">{filteredStep2Leads.length} leads</span>
             </div>
-
-            {/* Error */}
-            {step2Error && (
-              <div className="error-msg">
-                <i className="bi bi-exclamation-triangle"></i>
-                Failed to load: {step2Error.message}
-              </div>
-            )}
-
-            {/* Loading */}
+            {step2Error && <div className="error-msg"><i className="bi bi-exclamation-triangle"></i>Failed to load: {step2Error.message}</div>}
             {step2Loading ? (
-              <div className="loading">
-                <div className="spinner"></div>
-                <span>Loading Step 2 leads...</span>
-              </div>
+              <div className="loading"><div className="spinner"></div><span>Loading Step 2 leads...</span></div>
             ) : filteredStep2Leads.length === 0 ? (
-              <div className="empty-state">
-                <i className="bi bi-inbox"></i>
-                <p>No leads pending in Step 2</p>
-                <small>Leads will appear here when Planned date is set and Actual is empty</small>
-              </div>
+              <div className="empty-state"><i className="bi bi-inbox"></i><p>No leads pending in Step 2</p><small>Leads will appear here when Planned date is set and Actual is empty</small></div>
             ) : (
               <div className="table-wrapper">
                 <table className="lead-table">
-                  <thead>
-                    <tr>
-                      {STEP2_COLUMNS.map((col) => (
-                        <th key={col.key}>{col.label}</th>
-                      ))}
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
+                  <thead><tr>{STEP2_COLUMNS.map((col) => <th key={col.key}>{col.label}</th>)}<th>Actions</th></tr></thead>
                   <tbody>
                     {filteredStep2Leads.map((lead) => (
                       <tr key={lead.enqNo}>
-                        {STEP2_COLUMNS.map((col) => (
-                          <td key={col.key}>{lead[col.key] || "—"}</td>
-                        ))}
+                        {STEP2_COLUMNS.map((col) => <td key={col.key}>{lead[col.key] || "—"}</td>)}
                         <td className="actions-cell">
-                          {onNextAction && (
-                            <button
-                              className="btn btn-nap"
-                              onClick={() => onNextAction(lead, "FMS", "Step 2: Document Upload")}
-                              title="Next Action Plan"
-                            >
-                              <i className="bi bi-ticket-perforated"></i>
-                              NAP
-                            </button>
-                          )}
-                          <button
-                            className="btn btn-action"
-                            onClick={() => handleStep2Action(lead)}
-                            title="Upload Documents"
-                          >
-                            <i className="bi bi-cloud-upload"></i>
-                            Action
-                          </button>
+                          {onNextAction && <button className="btn btn-nap" onClick={() => onNextAction(lead, "FMS", "Step 2: Document Upload")} title="Next Action Plan"><i className="bi bi-ticket-perforated"></i>NAP</button>}
+                          <button className="btn btn-action" onClick={() => handleStep2Action(lead)} title="Upload Documents"><i className="bi bi-cloud-upload"></i>Action</button>
                         </td>
                       </tr>
                     ))}
@@ -158,14 +98,11 @@ export default function FMSPage({ currentUser, onNextAction }) {
           </div>
         );
 
-      case 3:
-        return <Step3 currentUser={currentUser} onNextAction={onNextAction} />;
-
-      case 4:
-        return <Step4 currentUser={currentUser} onNextAction={onNextAction} />;
-
-      case 5:
-        return <Step5 currentUser={currentUser} onNextAction={onNextAction} />;
+      case 3: return <Step3 currentUser={currentUser} onNextAction={onNextAction} />;
+      case 4: return <Step4 currentUser={currentUser} onNextAction={onNextAction} />;
+      case 5: return <Step5 currentUser={currentUser} onNextAction={onNextAction} />;
+      case 6: return <Step6 currentUser={currentUser} onNextAction={onNextAction} />;
+      case 7: return <Step7 currentUser={currentUser} onNextAction={onNextAction} />;
 
       default:
         return (
@@ -187,16 +124,12 @@ export default function FMSPage({ currentUser, onNextAction }) {
         </h2>
       </div>
 
-      {/* Sub-step tabs */}
       <div className="fms-sub-tabs">
         {FMS_STEPS.map((step) => (
           <button
             key={step.id}
             className={`fms-sub-tab ${activeStep === step.id ? "active" : ""}`}
-            onClick={() => {
-              setActiveStep(step.id);
-              setSearch(""); // Reset search on tab change
-            }}
+            onClick={() => { setActiveStep(step.id); setSearch(""); }}
           >
             <i className={`bi ${step.icon}`} style={{ marginRight: 6 }}></i>
             Step {step.id}: {step.label}
@@ -204,17 +137,12 @@ export default function FMSPage({ currentUser, onNextAction }) {
         ))}
       </div>
 
-      {/* Step Content */}
       {renderStepContent()}
 
-      {/* Step 2 Modal */}
       <Step2Modal
         show={showStep2Modal}
         lead={selectedLead}
-        onClose={() => {
-          setShowStep2Modal(false);
-          setSelectedLead(null);
-        }}
+        onClose={() => { setShowStep2Modal(false); setSelectedLead(null); }}
         onSuccess={handleStep2Success}
       />
     </div>

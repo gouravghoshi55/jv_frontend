@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import Step2Modal from "../components/Step2Modal.jsx";
 import Step3 from "./fms/steps/Step3.jsx";
-import Step4 from "./fms/steps/Step4.jsx";
+import Step4 from "./fms/steps/step4.jsx";
 import Step5 from "./fms/steps/Step5.jsx";
-import Step6 from "./fms/steps/Step6.jsx";
-import Step7 from "./fms/steps/Step7.jsx";
+import Step6 from "./fms/steps/step6.jsx";
+import Step7 from "./fms/steps/step7.jsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../api.js";
 import Step1 from "./fms/steps/Step1.jsx";

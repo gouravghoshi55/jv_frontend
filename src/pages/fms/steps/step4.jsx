@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
-import FilePreviewModal from "../../../components/FilePreviewModal.jsx";
+import FilePreviewModal from "../../../components/Filepreviewmodal.jsx
 
 // Columns to display in table
 const STEP4_COLUMNS = [

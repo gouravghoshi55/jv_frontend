@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
-import FilePreviewModal from "../../../components/FilePreviewmodal.jsx";
+import FilePreviewModal from "../../../components/Filepreviewmodal.jsx";
 
 const STEP5_COLUMNS = [
   { key: "enqNo", label: "EnQ No" },

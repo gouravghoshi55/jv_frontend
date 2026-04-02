@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
 
-// Columns to display in table
 const STEP3_COLUMNS = [
   { key: "enqNo", label: "EnQ No" },
   { key: "clientName", label: "Client Name" },
@@ -13,14 +12,6 @@ const STEP3_COLUMNS = [
   { key: "contactInfo", label: "Contact Info" },
   { key: "concernPerson", label: "Concern Person" },
   { key: "step3Planned", label: "Planned Date" },
-];
-
-// Status options
-const STATUS_OPTIONS = [
-  { value: "Done", label: "Done", icon: "bi-check-circle", color: "#22c55e" },
-  { value: "Cold Lead", label: "Cold Lead", icon: "bi-snow2", color: "#3b82f6" },
-  { value: "Back to Pipeline", label: "Back to Pipeline", icon: "bi-arrow-return-left", color: "#eab308" },
-  { value: "Not Qualified Lead", label: "Not Qualified Lead", icon: "bi-x-circle", color: "#ef4444" },
 ];
 
 // ============ INLINE STYLES ============
@@ -42,7 +33,7 @@ const styles = {
     backgroundColor: "var(--bg-primary, #ffffff)",
     borderRadius: "12px",
     width: "100%",
-    maxWidth: "520px",
+    maxWidth: "500px",
     maxHeight: "90vh",
     overflow: "hidden",
     display: "flex",
@@ -125,23 +116,22 @@ const styles = {
   },
   statusOptions: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
+    gridTemplateColumns: "1fr",
     gap: "10px",
   },
-  statusOption: {
+  statusOptionDone: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
     padding: "12px 16px",
     borderRadius: "8px",
-    border: "2px solid var(--border-primary, #e5e7eb)",
-    backgroundColor: "var(--bg-primary, #ffffff)",
-    cursor: "pointer",
+    border: "2px solid #22c55e",
+    backgroundColor: "#22c55e",
+    color: "#ffffff",
     fontSize: "14px",
     fontWeight: 500,
-    color: "var(--text-secondary, #6b7280)",
-    transition: "all 0.2s",
+    cursor: "default",
   },
   formInput: {
     width: "100%",
@@ -155,41 +145,16 @@ const styles = {
     transition: "border-color 0.2s, box-shadow 0.2s",
     boxSizing: "border-box",
   },
-  formTextarea: {
-    width: "100%",
-    padding: "12px 14px",
-    fontSize: "14px",
-    border: "1px solid var(--border-primary, #d1d5db)",
-    borderRadius: "8px",
-    backgroundColor: "var(--bg-primary, #ffffff)",
-    color: "var(--text-primary, #111827)",
-    outline: "none",
-    resize: "vertical",
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-  },
   formHint: {
     display: "block",
     fontSize: "12px",
     color: "var(--text-secondary, #6b7280)",
     marginTop: "6px",
   },
-  warningBox: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    padding: "12px 16px",
-    backgroundColor: "rgba(234, 179, 8, 0.1)",
-    border: "1px solid rgba(234, 179, 8, 0.3)",
-    borderRadius: "8px",
-    marginTop: "16px",
-    color: "#b45309",
-    fontSize: "14px",
-  },
-  warningIcon: {
-    fontSize: "18px",
-    flexShrink: 0,
-    marginTop: "2px",
+  twoColGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
   },
   modalFooter: {
     display: "flex",
@@ -217,7 +182,7 @@ const styles = {
     fontWeight: 500,
     borderRadius: "8px",
     border: "none",
-    backgroundColor: "#6366f1",
+    backgroundColor: "#22c55e",
     color: "#ffffff",
     cursor: "pointer",
     display: "flex",
@@ -246,50 +211,39 @@ const spinnerKeyframes = `
   }
 `;
 
-// ============ MODAL COMPONENT ============
-function Step3Modal({ show, lead, onClose, onSuccess }) {
-  const [status, setStatus] = useState("");
+function SvStep3Modal({ show, lead, onClose, onSuccess }) {
   const [plannedOverride, setPlannedOverride] = useState("");
-  const [remark, setRemark] = useState("");
+  const [googleMap, setGoogleMap] = useState("");
+  const [photos, setPhotos] = useState("");
+  const [transport, setTransport] = useState("");
+  const [distance, setDistance] = useState("");
+  const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (!show || !lead) return null;
 
   const handleSubmit = async () => {
-    // Allow submit if either status or planned date is provided
-    if (!status && !plannedOverride.trim()) {
-      toast.warn("Please select a status or update planned date");
-      return;
-    }
-
-    // Confirm if moving to another sheet
-    if (status && status !== "Done") {
-      const confirmMsg = `Are you sure you want to move this lead to ${status === "Back to Pipeline" ? "Pipeline" : status}?`;
-      if (!window.confirm(confirmMsg)) {
-        return;
-      }
-    }
-
     setSubmitting(true);
-
     try {
-      const res = await api.post("/fms/step3/update", {
+      const res = await api.post("/site-visit/fms/step3/update", {
         rowIndex: lead.rowIndex,
         enqNo: lead.enqNo,
-        status: status || null,
+        status: "Done",
         plannedOverride: plannedOverride.trim() || null,
-        remark: remark.trim(),
+        googleMap: googleMap.trim() || null,
+        photos: photos.trim() || null,
+        transport: transport.trim() || null,
+        distance: distance.trim() || null,
+        amount: amount.trim() || null,
       });
-
       if (res.data.success) {
         toast.success(res.data.message);
         onSuccess?.();
         onClose();
       } else {
-        throw new Error(res.data.error || "Update failed");
+        throw new Error(res.data.error);
       }
     } catch (err) {
-      console.error("Step 3 update error:", err);
       toast.error("Update failed: " + (err.response?.data?.error || err.message));
     } finally {
       setSubmitting(false);
@@ -297,23 +251,13 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
   };
 
   const handleClose = () => {
-    setStatus("");
     setPlannedOverride("");
-    setRemark("");
+    setGoogleMap("");
+    setPhotos("");
+    setTransport("");
+    setDistance("");
+    setAmount("");
     onClose();
-  };
-
-  const getStatusButtonStyle = (opt) => {
-    const isSelected = status === opt.value;
-    return {
-      ...styles.statusOption,
-      ...(isSelected && {
-        borderColor: opt.color,
-        backgroundColor: opt.color,
-        color: "#ffffff",
-      }),
-      ...(submitting && styles.btnDisabled),
-    };
   };
 
   return (
@@ -326,8 +270,8 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
           {/* Header */}
           <div style={styles.modalHeader}>
             <h3 style={styles.modalTitle}>
-              <i className="bi bi-people"></i>
-              Step 3: Need Analysis Meeting
+              <i className="bi bi-binoculars"></i>
+              Step 3: Land Observations
             </h3>
             <button
               style={{ ...styles.closeBtn, ...(submitting && styles.btnDisabled) }}
@@ -360,33 +304,105 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Status Selection */}
+            {/* Status (Always Done) */}
             <div style={styles.formGroup}>
               <label style={styles.label}>
                 <i className="bi bi-flag"></i>
                 Status
               </label>
               <div style={styles.statusOptions}>
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    style={getStatusButtonStyle(opt)}
-                    onClick={() => setStatus(status === opt.value ? "" : opt.value)}
-                    disabled={submitting}
-                  >
-                    <i className={`bi ${opt.icon}`}></i>
-                    {opt.label}
-                  </button>
-                ))}
+                <button type="button" style={styles.statusOptionDone} disabled>
+                  <i className="bi bi-check-circle"></i>
+                  Done
+                </button>
               </div>
             </div>
 
-            {/* Planned Override */}
+            {/* Google Map Location */}
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                <i className="bi bi-geo-alt"></i>
+                Google Map Location
+              </label>
+              <input
+                type="text"
+                style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                placeholder="Paste Google Maps link..."
+                value={googleMap}
+                onChange={(e) => setGoogleMap(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Photos Link */}
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                <i className="bi bi-camera"></i>
+                Photos Link
+              </label>
+              <input
+                type="text"
+                style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                placeholder="Paste photos link (Drive/Album)..."
+                value={photos}
+                onChange={(e) => setPhotos(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Transport Used */}
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                <i className="bi bi-truck"></i>
+                Transport Used
+              </label>
+              <input
+                type="text"
+                style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                placeholder="e.g., Car, Train, By car with Jitu Balani..."
+                value={transport}
+                onChange={(e) => setTransport(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Distance & Amount - Two Column */}
+            <div style={styles.twoColGrid}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  <i className="bi bi-signpost-2"></i>
+                  Distance (KM)
+                </label>
+                <input
+                  type="text"
+                  style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                  placeholder="e.g., 45"
+                  value={distance}
+                  onChange={(e) => setDistance(e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  <i className="bi bi-currency-rupee"></i>
+                  Amount
+                </label>
+                <input
+                  type="text"
+                  style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                  placeholder="e.g., 2500/-"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            {/* Planned Date Override */}
             <div style={styles.formGroup}>
               <label style={styles.label}>
                 <i className="bi bi-calendar-event"></i>
-                Planned Date & Time (Optional)
+                Planned Date Override (Optional)
               </label>
               <input
                 type="datetime-local"
@@ -395,37 +411,9 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
                 onChange={(e) => setPlannedOverride(e.target.value)}
               />
               <small style={styles.formHint}>
-                Leave empty to keep current planned date, or set to update
+                Leave empty to keep current planned date
               </small>
             </div>
-
-            {/* Remark */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <i className="bi bi-chat-left-text"></i>
-                Remark
-              </label>
-              <textarea
-                style={{ ...styles.formTextarea, ...(submitting && styles.btnDisabled) }}
-                placeholder="Enter meeting notes, observations, or any remarks..."
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                disabled={submitting}
-                rows={4}
-              />
-            </div>
-
-            {/* Warning for move actions */}
-            {status && status !== "Done" && (
-              <div style={styles.warningBox}>
-                <i className="bi bi-exclamation-triangle" style={styles.warningIcon}></i>
-                <span>
-                  This will move the lead to{" "}
-                  <strong>{status === "Back to Pipeline" ? "Pipeline" : status}</strong> and
-                  remove it from FMS.
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Footer */}
@@ -438,22 +426,19 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
               Cancel
             </button>
             <button
-              style={{
-                ...styles.btnPrimary,
-                ...((submitting || (!status && !plannedOverride)) && styles.btnDisabled),
-              }}
+              style={{ ...styles.btnPrimary, ...(submitting && styles.btnDisabled) }}
               onClick={handleSubmit}
-              disabled={submitting || (!status && !plannedOverride)}
+              disabled={submitting}
             >
               {submitting ? (
                 <>
                   <span style={styles.spinnerSmall}></span>
-                  Updating...
+                  Saving...
                 </>
               ) : (
                 <>
                   <i className="bi bi-check-lg"></i>
-                  Submit
+                  Mark as Done
                 </>
               )}
             </button>
@@ -464,57 +449,43 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
   );
 }
 
-// ============ TAB CONTENT COMPONENT ============
-export default function Step3({ currentUser, onNextAction }) {
+export default function SvStep3({ currentUser, onNextAction }) {
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch Step 3 leads
   const { data, isLoading, error } = useQuery({
-    queryKey: ["fms-step3"],
-    queryFn: () => api.get("/fms/step3").then((r) => r.data),
+    queryKey: ["sv-step3"],
+    queryFn: () => api.get("/site-visit/fms/step3").then((r) => r.data),
     staleTime: 30000,
   });
 
   const leads = data?.leads || [];
 
-  // Filter leads
   const filteredLeads = leads.filter((lead) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
       (lead.enqNo || "").toLowerCase().includes(q) ||
       (lead.clientName || "").toLowerCase().includes(q) ||
-      (lead.location || "").toLowerCase().includes(q) ||
-      (lead.concernPerson || "").toLowerCase().includes(q)
+      (lead.location || "").toLowerCase().includes(q)
     );
   });
 
-  const handleAction = (lead) => {
-    setSelectedLead(lead);
-    setShowModal(true);
-  };
-
   const handleSuccess = () => {
-    queryClient.invalidateQueries(["fms-step3"]);
-    queryClient.invalidateQueries(["fms-step4"]);
-    queryClient.invalidateQueries(["pipeline"]);
-    queryClient.invalidateQueries(["cold-leads"]);
-    queryClient.invalidateQueries(["not-qualified"]);
+    queryClient.invalidateQueries(["sv-step3"]);
   };
 
   return (
     <div className="step-content">
-      {/* Search */}
       <div className="filter-bar">
         <div className="search-box">
           <i className="bi bi-search"></i>
           <input
             type="text"
             className="filter-input"
-            placeholder="Search by EnQ No, client, location..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -527,7 +498,6 @@ export default function Step3({ currentUser, onNextAction }) {
         <span className="result-count">{filteredLeads.length} leads</span>
       </div>
 
-      {/* Error State */}
       {error && (
         <div className="error-msg">
           <i className="bi bi-exclamation-triangle"></i>
@@ -535,7 +505,6 @@ export default function Step3({ currentUser, onNextAction }) {
         </div>
       )}
 
-      {/* Loading State */}
       {isLoading ? (
         <div className="loading">
           <div className="spinner"></div>
@@ -544,8 +513,8 @@ export default function Step3({ currentUser, onNextAction }) {
       ) : filteredLeads.length === 0 ? (
         <div className="empty-state">
           <i className="bi bi-inbox"></i>
-          <p>No leads pending in Step 3</p>
-          <small>Leads will appear here when Step 2 is complete and Step 3 Planned date is set</small>
+          <p>No leads pending in Land Observations</p>
+          <small>Leads appear when Step 2 Scheduling is Done</small>
         </div>
       ) : (
         <div className="table-wrapper">
@@ -568,8 +537,8 @@ export default function Step3({ currentUser, onNextAction }) {
                     {onNextAction && (
                       <button
                         className="btn btn-nap"
-                        onClick={() => onNextAction(lead, "FMS", "Step 3: Need Analysis Meeting")}
-                        title="Next Action Plan"
+                        onClick={() => onNextAction(lead, "Site Visit FMS", "Step 3: Land Observations")}
+                        title="NAP"
                       >
                         <i className="bi bi-ticket-perforated"></i>
                         NAP
@@ -577,8 +546,11 @@ export default function Step3({ currentUser, onNextAction }) {
                     )}
                     <button
                       className="btn btn-action"
-                      onClick={() => handleAction(lead)}
-                      title="Update Step 3"
+                      onClick={() => {
+                        setSelectedLead(lead);
+                        setShowModal(true);
+                      }}
+                      title="Update"
                     >
                       <i className="bi bi-pencil-square"></i>
                       Action
@@ -591,8 +563,7 @@ export default function Step3({ currentUser, onNextAction }) {
         </div>
       )}
 
-      {/* Step 3 Modal */}
-      <Step3Modal
+      <SvStep3Modal
         show={showModal}
         lead={selectedLead}
         onClose={() => {

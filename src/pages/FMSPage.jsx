@@ -7,6 +7,7 @@ import Step6 from "./fms/steps/Step6.jsx";
 import Step7 from "./fms/steps/Step7.jsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../api.js";
+import Step1 from "./fms/steps/Step1.jsx";
 
 const FMS_STEPS = [
   { id: 1, label: "FMS Leads", icon: "bi-file-earmark-check" },
@@ -28,6 +29,189 @@ const STEP2_COLUMNS = [
   { key: "concernPerson", label: "Concern Person" },
   { key: "planned", label: "Planned Date" },
 ];
+
+const step2Styles = {
+  stepContent: {
+    padding: "0",
+  },
+  filterBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+  },
+  searchBox: {
+    position: "relative",
+    flex: 1,
+    minWidth: "250px",
+    maxWidth: "400px",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "var(--text-secondary, #6b7280)",
+    fontSize: "16px",
+  },
+  filterInput: {
+    width: "100%",
+    padding: "10px 36px 10px 38px",
+    fontSize: "14px",
+    border: "1px solid var(--border-primary, #d1d5db)",
+    borderRadius: "8px",
+    backgroundColor: "var(--bg-primary, #ffffff)",
+    color: "var(--text-primary, #111827)",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    boxSizing: "border-box",
+  },
+  searchClear: {
+    position: "absolute",
+    right: "8px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    color: "var(--text-secondary, #6b7280)",
+    cursor: "pointer",
+    padding: "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "4px",
+  },
+  resultCount: {
+    fontSize: "14px",
+    color: "var(--text-secondary, #6b7280)",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+  },
+  loading: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "60px 20px",
+    gap: "16px",
+  },
+  spinner: {
+    width: "40px",
+    height: "40px",
+    border: "3px solid var(--border-primary, #e5e7eb)",
+    borderTopColor: "#6366f1",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+  },
+  loadingText: {
+    fontSize: "14px",
+    color: "var(--text-secondary, #6b7280)",
+  },
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "60px 20px",
+    textAlign: "center",
+  },
+  emptyIcon: {
+    fontSize: "48px",
+    color: "var(--text-secondary, #9ca3af)",
+    marginBottom: "16px",
+  },
+  emptyTitle: {
+    fontSize: "16px",
+    fontWeight: 600,
+    color: "var(--text-primary, #111827)",
+    margin: "0 0 8px 0",
+  },
+  emptySubtitle: {
+    fontSize: "14px",
+    color: "var(--text-secondary, #6b7280)",
+    margin: 0,
+  },
+  errorMsg: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 16px",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    border: "1px solid rgba(239, 68, 68, 0.3)",
+    borderRadius: "8px",
+    color: "#dc2626",
+    fontSize: "14px",
+    marginBottom: "16px",
+  },
+  tableWrapper: {
+    overflowX: "auto",
+    borderRadius: "8px",
+    border: "1px solid var(--border-primary, #e5e7eb)",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: "14px",
+  },
+  th: {
+    padding: "12px 16px",
+    textAlign: "left",
+    fontWeight: 600,
+    fontSize: "13px",
+    color: "var(--text-secondary, #6b7280)",
+    backgroundColor: "var(--bg-secondary, #f9fafb)",
+    borderBottom: "1px solid var(--border-primary, #e5e7eb)",
+    whiteSpace: "nowrap",
+  },
+  td: {
+    padding: "12px 16px",
+    borderBottom: "1px solid var(--border-primary, #e5e7eb)",
+    color: "var(--text-primary, #111827)",
+    verticalAlign: "middle",
+  },
+  actionsCell: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  btnNap: {
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "6px",
+    backgroundColor: "rgba(245, 158, 11, 0.1)",
+    color: "#f59e0b",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontSize: "13px",
+    fontWeight: 500,
+    transition: "background-color 0.2s",
+  },
+  btnAction: {
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "6px",
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    color: "#6366f1",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontSize: "13px",
+    fontWeight: 500,
+    transition: "background-color 0.2s",
+  },
+};
+ 
+// Add this keyframes style tag once at the top of your component or in a useEffect
+const spinnerKeyframes = `
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
 
 export default function FMSPage({ currentUser, onNextAction }) {
   const [activeStep, setActiveStep] = useState(2);
@@ -61,6 +245,7 @@ export default function FMSPage({ currentUser, onNextAction }) {
 
   const renderStepContent = () => {
     switch (activeStep) {
+      case 1: return <Step1 currentUser={currentUser} />;
       case 2:
         return (
           <div className="step-content">

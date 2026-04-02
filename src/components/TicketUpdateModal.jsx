@@ -11,6 +11,8 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
   const [loading, setLoading] = useState(false);
 
   const isAdmin = currentUser?.role?.toLowerCase() === "admin";
+  const isPC = currentUser?.role?.toLowerCase() === "pc";
+  const isAdminOrPC = isAdmin || isPC;
   const isAssignedDoer =
     currentUser?.userName?.toLowerCase() === ticket?.assignedTo?.toLowerCase();
 
@@ -29,13 +31,15 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
     try {
       const payload = { rowIndex: ticket.rowIndex };
 
-      if (isAdmin) {
+      // Admin and PC both have full control
+      if (isAdminOrPC) {
         if (status !== ticket.status) payload.status = status;
         if (confirmedDate !== ticket.confirmedDate) payload.confirmedDate = confirmedDate;
         if (pcRemarks !== ticket.pcRemarks) payload.pcRemarks = pcRemarks;
         if (revisedDate !== ticket.revisedDate) payload.revisedDate = revisedDate;
       }
 
+      // Assigned doer can update their fields
       if (isAssignedDoer) {
         if (doerRemarks !== ticket.doerRemarks) payload.doerRemarks = doerRemarks;
         if (status === "Date Revision Requested" && revisedDate) {
@@ -74,7 +78,7 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
   if (!show || !ticket) return null;
 
   const getStatusOptions = () => {
-    if (isAdmin) {
+    if (isAdminOrPC) {
       return ["Open", "PC Confirmed", "In Progress", "Date Revision Requested", "Completed", "Rejected", "Overdue"];
     }
     if (isAssignedDoer) {
@@ -170,7 +174,7 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="form-select"
-                disabled={!isAdmin && !isAssignedDoer}
+                disabled={!isAdminOrPC && !isAssignedDoer}
               >
                 {getStatusOptions().map((opt) => (
                   <option key={opt} value={opt}>
@@ -180,7 +184,8 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </select>
             </div>
 
-            {isAdmin && (
+            {/* Confirmed Date — visible to Admin and PC */}
+            {isAdminOrPC && (
               <div className="form-group">
                 <label>Confirmed Date (PC fills after calling doer)</label>
                 <input
@@ -192,7 +197,8 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </div>
             )}
 
-            {(status === "Date Revision Requested" || isAdmin) && (
+            {/* Revised Date — visible to Admin/PC always, or Doer when requesting revision */}
+            {(isAdminOrPC || status === "Date Revision Requested") && (
               <div className="form-group">
                 <label>Revised Date</label>
                 <input
@@ -204,19 +210,21 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </div>
             )}
 
-            {isAdmin && (
+            {/* PC Remarks — visible to Admin and PC */}
+            {isAdminOrPC && (
               <div className="form-group">
                 <label>PC Remarks</label>
                 <textarea
                   value={pcRemarks}
                   onChange={(e) => setPcRemarks(e.target.value)}
-                  placeholder="Admin notes..."
+                  placeholder="PC / Admin notes..."
                   rows={2}
                   className="form-textarea"
                 />
               </div>
             )}
 
+            {/* Doer Remarks — visible to assigned doer */}
             {isAssignedDoer && (
               <div className="form-group">
                 <label>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
+import FilePreviewModal from "../../../components/Filepreviewmodal.jsx";
 
 const STEP7_COLUMNS = [
   { key: "enqNo", label: "EnQ No" },
@@ -13,6 +14,22 @@ const STEP7_COLUMNS = [
   { key: "concernPerson", label: "Concern Person" },
   { key: "step7Planned", label: "Planned Date" },
 ];
+
+// Collect ALL files from Step 2 + Step 4 for preview
+function getPreviewFiles(lead) {
+  const files = [];
+  // Step 2 files
+  if (lead.aks) files.push({ label: "AKS", link: lead.aks });
+  if (lead.khasra) files.push({ label: "Khasra", link: lead.khasra });
+  if (lead.oldDocument) files.push({ label: "Old Document", link: lead.oldDocument });
+  if (lead.landSurvey) files.push({ label: "Land Survey", link: lead.landSurvey });
+  // Step 4 files
+  if (lead.step4CadFile) files.push({ label: "CAD File", link: lead.step4CadFile });
+  // Step 7 files (if any)
+  if (lead.step7Minutes) files.push({ label: "Minutes of Meeting", link: lead.step7Minutes });
+  if (lead.step7Voice) files.push({ label: "Voice Recording", link: lead.step7Voice });
+  return files;
+}
 
 // ============ INLINE STYLES ============
 const styles = {
@@ -412,6 +429,9 @@ export default function Step7({ currentUser, onNextAction }) {
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  // Preview states
+  const [previewLead, setPreviewLead] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -436,6 +456,11 @@ export default function Step7({ currentUser, onNextAction }) {
   const handleAction = (lead) => {
     setSelectedLead(lead);
     setShowModal(true);
+  };
+
+  const handlePreview = (lead) => {
+    setPreviewLead(lead);
+    setShowPreview(true);
   };
 
   const handleSuccess = () => {
@@ -500,6 +525,15 @@ export default function Step7({ currentUser, onNextAction }) {
                     <td key={col.key}>{lead[col.key] || "—"}</td>
                   ))}
                   <td className="actions-cell">
+                    {lead.pdfFolder && (
+                      <button
+                        className="btn btn-folder"
+                        onClick={() => handlePreview(lead)}
+                        title="Preview Files"
+                      >
+                        <i className="bi bi-eye"></i>
+                      </button>
+                    )}
                     {onNextAction && (
                       <button
                         className="btn btn-nap"
@@ -534,6 +568,17 @@ export default function Step7({ currentUser, onNextAction }) {
           setSelectedLead(null);
         }}
         onSuccess={handleSuccess}
+      />
+
+      <FilePreviewModal
+        show={showPreview}
+        onClose={() => {
+          setShowPreview(false);
+          setPreviewLead(null);
+        }}
+        files={previewLead ? getPreviewFiles(previewLead) : []}
+        folderLink={previewLead?.pdfFolder}
+        title={previewLead ? `Files — ${previewLead.clientName} (${previewLead.enqNo})` : "Files"}
       />
     </div>
   );

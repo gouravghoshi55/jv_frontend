@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
 import FilePreviewModal from "../../../components/Filepreviewmodal.jsx";
+import RemarksSection from "../../../components/Remarkssection.jsx";
 
 const STEP7_COLUMNS = [
   { key: "enqNo", label: "EnQ No" },
@@ -15,23 +16,23 @@ const STEP7_COLUMNS = [
   { key: "step7Planned", label: "Planned Date" },
 ];
 
-// Collect ALL files from Step 2 + Step 4 for preview
 function getPreviewFiles(lead) {
   const files = [];
-  // Step 2 files
   if (lead.aks) files.push({ label: "AKS", link: lead.aks });
   if (lead.khasra) files.push({ label: "Khasra", link: lead.khasra });
-  if (lead.oldDocument) files.push({ label: "Old Document", link: lead.oldDocument });
-  if (lead.landSurvey) files.push({ label: "Land Survey", link: lead.landSurvey });
-  // Step 4 files
-  if (lead.step4CadFile) files.push({ label: "CAD File", link: lead.step4CadFile });
-  // Step 7 files (if any)
-  if (lead.step7Minutes) files.push({ label: "Minutes of Meeting", link: lead.step7Minutes });
-  if (lead.step7Voice) files.push({ label: "Voice Recording", link: lead.step7Voice });
+  if (lead.oldDocument)
+    files.push({ label: "Old Document", link: lead.oldDocument });
+  if (lead.landSurvey)
+    files.push({ label: "Land Survey", link: lead.landSurvey });
+  if (lead.step4CadFile)
+    files.push({ label: "CAD File", link: lead.step4CadFile });
+  if (lead.step7Minutes)
+    files.push({ label: "Minutes of Meeting", link: lead.step7Minutes });
+  if (lead.step7Voice)
+    files.push({ label: "Voice Recording", link: lead.step7Voice });
   return files;
 }
 
-// ============ INLINE STYLES ============
 const styles = {
   modalOverlay: {
     position: "fixed",
@@ -83,13 +84,8 @@ const styles = {
     padding: "4px 8px",
     borderRadius: "6px",
     lineHeight: 1,
-    transition: "background-color 0.2s",
   },
-  modalBody: {
-    padding: "20px",
-    overflowY: "auto",
-    flex: 1,
-  },
+  modalBody: { padding: "20px", overflowY: "auto", flex: 1 },
   leadInfoCard: {
     backgroundColor: "var(--bg-tertiary, #f3f4f6)",
     borderRadius: "8px",
@@ -128,9 +124,7 @@ const styles = {
     fontSize: "14px",
     fontWeight: 500,
   },
-  formGroup: {
-    marginBottom: "20px",
-  },
+  formGroup: { marginBottom: "20px" },
   label: {
     display: "flex",
     alignItems: "center",
@@ -140,11 +134,7 @@ const styles = {
     color: "var(--text-primary, #111827)",
     marginBottom: "8px",
   },
-  statusOptions: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "10px",
-  },
+  statusOptions: { display: "grid", gridTemplateColumns: "1fr", gap: "10px" },
   statusOptionDone: {
     display: "flex",
     alignItems: "center",
@@ -168,7 +158,6 @@ const styles = {
     backgroundColor: "var(--bg-primary, #ffffff)",
     color: "var(--text-primary, #111827)",
     outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
     boxSizing: "border-box",
   },
   formHint: {
@@ -189,11 +178,7 @@ const styles = {
     color: "#10b981",
     fontSize: "14px",
   },
-  infoIcon: {
-    fontSize: "18px",
-    flexShrink: 0,
-    marginTop: "2px",
-  },
+  infoIcon: { fontSize: "18px", flexShrink: 0, marginTop: "2px" },
   modalFooter: {
     display: "flex",
     alignItems: "center",
@@ -212,7 +197,6 @@ const styles = {
     backgroundColor: "var(--bg-primary, #ffffff)",
     color: "var(--text-primary, #374151)",
     cursor: "pointer",
-    transition: "background-color 0.2s",
   },
   btnPrimary: {
     padding: "10px 20px",
@@ -226,12 +210,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    transition: "background-color 0.2s",
   },
-  btnDisabled: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
+  btnDisabled: { opacity: 0.6, cursor: "not-allowed" },
   spinnerSmall: {
     width: "16px",
     height: "16px",
@@ -242,22 +222,18 @@ const styles = {
   },
 };
 
-// Add keyframes for spinner animation
-const spinnerKeyframes = `
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-`;
+const spinnerKeyframes = `@keyframes spin { to { transform: rotate(360deg); } }`;
 
-// ============ MODAL ============
 function Step7Modal({ show, lead, onClose, onSuccess }) {
   const [plannedOverride, setPlannedOverride] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const remarksRef = React.useRef(null);
 
   if (!show || !lead) return null;
 
   const handleSubmitDone = async () => {
-    const confirmMsg = "This will mark the lead as Done and move it to the DONE sheet. Continue?";
+    const confirmMsg =
+      "This will mark the lead as Done and move it to the DONE sheet. Continue?";
     if (!window.confirm(confirmMsg)) return;
 
     setSubmitting(true);
@@ -269,6 +245,10 @@ function Step7Modal({ show, lead, onClose, onSuccess }) {
         plannedOverride: plannedOverride.trim() || null,
       });
       if (res.data.success) {
+        const remarkText = remarksRef.current?.getRemarkText() || "";
+        if (remarkText.trim()) {
+          await remarksRef.current.saveRemark(remarkText);
+        }
         toast.success(res.data.message);
         onSuccess?.();
         onClose();
@@ -276,7 +256,9 @@ function Step7Modal({ show, lead, onClose, onSuccess }) {
         throw new Error(res.data.error || "Update failed");
       }
     } catch (err) {
-      toast.error("Update failed: " + (err.response?.data?.error || err.message));
+      toast.error(
+        "Update failed: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -289,29 +271,25 @@ function Step7Modal({ show, lead, onClose, onSuccess }) {
 
   return (
     <>
-      {/* Inject keyframes */}
       <style>{spinnerKeyframes}</style>
-
       <div style={styles.modalOverlay} onClick={handleClose}>
         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
           <div style={styles.modalHeader}>
             <h3 style={styles.modalTitle}>
-              <i className="bi bi-handshake"></i>
-              Step 7: Agreement
+              <i className="bi bi-handshake"></i>Step 7: Agreement
             </h3>
             <button
-              style={{ ...styles.closeBtn, ...(submitting && styles.btnDisabled) }}
+              style={{
+                ...styles.closeBtn,
+                ...(submitting && styles.btnDisabled),
+              }}
               onClick={handleClose}
               disabled={submitting}
             >
               &times;
             </button>
           </div>
-
-          {/* Body */}
           <div style={styles.modalBody}>
-            {/* Lead Info Card */}
             <div style={styles.leadInfoCard}>
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>EnQ No:</span>
@@ -346,33 +324,34 @@ function Step7Modal({ show, lead, onClose, onSuccess }) {
               )}
             </div>
 
-            {/* Status (Always Done) */}
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <i className="bi bi-flag"></i>
-                Status
+                <i className="bi bi-flag"></i>Status
               </label>
               <div style={styles.statusOptions}>
                 <button
                   type="button"
-                  style={{ ...styles.statusOptionDone, ...(submitting && styles.btnDisabled) }}
+                  style={{
+                    ...styles.statusOptionDone,
+                    ...(submitting && styles.btnDisabled),
+                  }}
                   disabled={submitting}
                 >
-                  <i className="bi bi-check-circle"></i>
-                  Done — Move to DONE
+                  <i className="bi bi-check-circle"></i>Done — Move to DONE
                 </button>
               </div>
             </div>
-
-            {/* Planned Date Override */}
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <i className="bi bi-calendar-event"></i>
-                Planned Date Override (Optional)
+                <i className="bi bi-calendar-event"></i>Planned Date Override
+                (Optional)
               </label>
               <input
                 type="datetime-local"
-                style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                style={{
+                  ...styles.formInput,
+                  ...(submitting && styles.btnDisabled),
+                }}
                 value={plannedOverride}
                 onChange={(e) => setPlannedOverride(e.target.value)}
                 disabled={submitting}
@@ -382,38 +361,49 @@ function Step7Modal({ show, lead, onClose, onSuccess }) {
               </small>
             </div>
 
-            {/* Info Box */}
+            {/* Remarks Section */}
+            <RemarksSection
+              ref={remarksRef}
+              enqNo={lead.enqNo}
+              stepName="Step 7: Agreement"
+              disabled={submitting}
+            />
+
             <div style={styles.infoBox}>
               <i className="bi bi-info-circle" style={styles.infoIcon}></i>
               <span>
-                Marking as Done will move this lead to the <strong>DONE</strong> sheet permanently.
+                Marking as Done will move this lead to the <strong>DONE</strong>{" "}
+                sheet permanently.
               </span>
             </div>
           </div>
 
-          {/* Footer */}
           <div style={styles.modalFooter}>
             <button
-              style={{ ...styles.btnCancel, ...(submitting && styles.btnDisabled) }}
+              style={{
+                ...styles.btnCancel,
+                ...(submitting && styles.btnDisabled),
+              }}
               onClick={handleClose}
               disabled={submitting}
             >
               Cancel
             </button>
             <button
-              style={{ ...styles.btnPrimary, ...(submitting && styles.btnDisabled) }}
+              style={{
+                ...styles.btnPrimary,
+                ...(submitting && styles.btnDisabled),
+              }}
               onClick={handleSubmitDone}
               disabled={submitting}
             >
               {submitting ? (
                 <>
-                  <span style={styles.spinnerSmall}></span>
-                  Moving...
+                  <span style={styles.spinnerSmall}></span>Moving...
                 </>
               ) : (
                 <>
-                  <i className="bi bi-check-lg"></i>
-                  Mark as Done
+                  <i className="bi bi-check-lg"></i>Mark as Done
                 </>
               )}
             </button>
@@ -424,12 +414,10 @@ function Step7Modal({ show, lead, onClose, onSuccess }) {
   );
 }
 
-// ============ TAB ============
 export default function Step7({ currentUser, onNextAction }) {
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  // Preview states
   const [previewLead, setPreviewLead] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const queryClient = useQueryClient();
@@ -439,9 +427,7 @@ export default function Step7({ currentUser, onNextAction }) {
     queryFn: () => api.get("/fms/step7").then((r) => r.data),
     staleTime: 30000,
   });
-
   const leads = data?.leads || [];
-
   const filteredLeads = leads.filter((lead) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -457,12 +443,10 @@ export default function Step7({ currentUser, onNextAction }) {
     setSelectedLead(lead);
     setShowModal(true);
   };
-
   const handlePreview = (lead) => {
     setPreviewLead(lead);
     setShowPreview(true);
   };
-
   const handleSuccess = () => {
     queryClient.invalidateQueries(["fms-step7"]);
     queryClient.invalidateQueries(["done"]);
@@ -488,14 +472,12 @@ export default function Step7({ currentUser, onNextAction }) {
         </div>
         <span className="result-count">{filteredLeads.length} leads</span>
       </div>
-
       {error && (
         <div className="error-msg">
-          <i className="bi bi-exclamation-triangle"></i>
-          Failed to load: {error.message}
+          <i className="bi bi-exclamation-triangle"></i>Failed to load:{" "}
+          {error.message}
         </div>
       )}
-
       {isLoading ? (
         <div className="loading">
           <div className="spinner"></div>
@@ -537,11 +519,12 @@ export default function Step7({ currentUser, onNextAction }) {
                     {onNextAction && (
                       <button
                         className="btn btn-nap"
-                        onClick={() => onNextAction(lead, "FMS", "Step 7: Agreement")}
+                        onClick={() =>
+                          onNextAction(lead, "FMS", "Step 7: Agreement")
+                        }
                         title="Next Action Plan"
                       >
-                        <i className="bi bi-ticket-perforated"></i>
-                        NAP
+                        <i className="bi bi-ticket-perforated"></i>NAP
                       </button>
                     )}
                     <button
@@ -549,8 +532,7 @@ export default function Step7({ currentUser, onNextAction }) {
                       onClick={() => handleAction(lead)}
                       title="Update Step 7"
                     >
-                      <i className="bi bi-pencil-square"></i>
-                      Action
+                      <i className="bi bi-pencil-square"></i>Action
                     </button>
                   </td>
                 </tr>
@@ -559,7 +541,6 @@ export default function Step7({ currentUser, onNextAction }) {
           </table>
         </div>
       )}
-
       <Step7Modal
         show={showModal}
         lead={selectedLead}
@@ -569,7 +550,6 @@ export default function Step7({ currentUser, onNextAction }) {
         }}
         onSuccess={handleSuccess}
       />
-
       <FilePreviewModal
         show={showPreview}
         onClose={() => {
@@ -578,7 +558,11 @@ export default function Step7({ currentUser, onNextAction }) {
         }}
         files={previewLead ? getPreviewFiles(previewLead) : []}
         folderLink={previewLead?.pdfFolder}
-        title={previewLead ? `Files — ${previewLead.clientName} (${previewLead.enqNo})` : "Files"}
+        title={
+          previewLead
+            ? `Files — ${previewLead.clientName} (${previewLead.enqNo})`
+            : "Files"
+        }
       />
     </div>
   );

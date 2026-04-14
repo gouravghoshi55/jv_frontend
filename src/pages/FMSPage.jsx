@@ -13,8 +13,8 @@ import Step1 from "./fms/steps/Step1.jsx";
 const FMS_STEPS = [
   { id: 2, label: "Document Upload", icon: "bi-cloud-upload" },
   { id: 3, label: "Need Analysis Meeting", icon: "bi-people" },
-  { id: 4, label: "Proposal Meeting", icon: "bi-clipboard-data" },
-  { id: 5, label: "Proposal Preparation", icon: "bi-file-earmark-check" },
+  { id: 4, label: "Proposal Preparation ", icon: "bi-clipboard-data" },
+  { id: 5, label: "Proposal Meeting", icon: "bi-file-earmark-check" },
   { id: 6, label: "Follow Up", icon: "bi-arrow-repeat" },
   { id: 7, label: "Agreement", icon: "bi-handshake" },
 ];

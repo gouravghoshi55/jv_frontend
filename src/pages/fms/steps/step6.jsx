@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
 import FilePreviewModal from "../../../components/Filepreviewmodal.jsx";
+import RemarksSection from "../../../components/Remarkssection.jsx";
 
 const STEP6_COLUMNS = [
   { key: "enqNo", label: "EnQ No" },
@@ -18,23 +19,27 @@ const STEP6_COLUMNS = [
 
 const STATUS_OPTIONS = [
   { value: "Done", label: "Done", icon: "bi-check-circle", color: "#22c55e" },
-  { value: "Reschedule", label: "Reschedule", icon: "bi-arrow-clockwise", color: "#f59e0b" },
+  {
+    value: "Reschedule",
+    label: "Reschedule",
+    icon: "bi-arrow-clockwise",
+    color: "#f59e0b",
+  },
 ];
 
-// Collect ALL files from Step 2 + Step 4 for preview
 function getPreviewFiles(lead) {
   const files = [];
-  // Step 2 files
   if (lead.aks) files.push({ label: "AKS", link: lead.aks });
   if (lead.khasra) files.push({ label: "Khasra", link: lead.khasra });
-  if (lead.oldDocument) files.push({ label: "Old Document", link: lead.oldDocument });
-  if (lead.landSurvey) files.push({ label: "Land Survey", link: lead.landSurvey });
-  // Step 4 files
-  if (lead.step4CadFile) files.push({ label: "CAD File", link: lead.step4CadFile });
+  if (lead.oldDocument)
+    files.push({ label: "Old Document", link: lead.oldDocument });
+  if (lead.landSurvey)
+    files.push({ label: "Land Survey", link: lead.landSurvey });
+  if (lead.step4CadFile)
+    files.push({ label: "CAD File", link: lead.step4CadFile });
   return files;
 }
 
-// ============ INLINE STYLES ============
 const styles = {
   modalOverlay: {
     position: "fixed",
@@ -86,13 +91,8 @@ const styles = {
     padding: "4px 8px",
     borderRadius: "6px",
     lineHeight: 1,
-    transition: "background-color 0.2s",
   },
-  modalBody: {
-    padding: "20px",
-    overflowY: "auto",
-    flex: 1,
-  },
+  modalBody: { padding: "20px", overflowY: "auto", flex: 1 },
   leadInfoCard: {
     backgroundColor: "var(--bg-tertiary, #f3f4f6)",
     borderRadius: "8px",
@@ -144,9 +144,7 @@ const styles = {
     fontSize: "13px",
     fontWeight: 600,
   },
-  formGroup: {
-    marginBottom: "20px",
-  },
+  formGroup: { marginBottom: "20px" },
   label: {
     display: "flex",
     alignItems: "center",
@@ -156,9 +154,7 @@ const styles = {
     color: "var(--text-primary, #111827)",
     marginBottom: "8px",
   },
-  required: {
-    color: "#ef4444",
-  },
+  required: { color: "#ef4444" },
   statusOptions: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
@@ -188,7 +184,6 @@ const styles = {
     backgroundColor: "var(--bg-primary, #ffffff)",
     color: "var(--text-primary, #111827)",
     outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
     boxSizing: "border-box",
   },
   formHint: {
@@ -238,7 +233,6 @@ const styles = {
     backgroundColor: "var(--bg-primary, #ffffff)",
     color: "var(--text-primary, #374151)",
     cursor: "pointer",
-    transition: "background-color 0.2s",
   },
   btnPrimary: {
     padding: "10px 20px",
@@ -252,12 +246,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    transition: "background-color 0.2s",
   },
-  btnDisabled: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
+  btnDisabled: { opacity: 0.6, cursor: "not-allowed" },
   spinnerSmall: {
     width: "16px",
     height: "16px",
@@ -268,19 +258,14 @@ const styles = {
   },
 };
 
-// Add keyframes for spinner animation
-const spinnerKeyframes = `
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-`;
+const spinnerKeyframes = `@keyframes spin { to { transform: rotate(360deg); } }`;
 
-// ============ MODAL ============
 function Step6Modal({ show, lead, onClose, onSuccess }) {
   const [status, setStatus] = useState("");
   const [plannedOverride, setPlannedOverride] = useState("");
   const [nextStepPlanned, setNextStepPlanned] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const remarksRef = React.useRef(null);
 
   if (!show || !lead) return null;
 
@@ -289,12 +274,10 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
       toast.warn("Please select a status or update planned date");
       return;
     }
-
     if (status === "Reschedule" && !plannedOverride.trim()) {
       toast.warn("Please set the new planned date for reschedule");
       return;
     }
-
     if (status === "Done" && !nextStepPlanned.trim()) {
       toast.warn("Please set the Step 7 Planned Date");
       return;
@@ -309,8 +292,11 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
         plannedOverride: plannedOverride.trim() || null,
         nextStepPlanned: nextStepPlanned.trim() || null,
       });
-
       if (res.data.success) {
+        const remarkText = remarksRef.current?.getRemarkText() || "";
+        if (remarkText.trim()) {
+          await remarksRef.current.saveRemark(remarkText);
+        }
         toast.success(res.data.message);
         onSuccess?.();
         onClose();
@@ -318,7 +304,9 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
         throw new Error(res.data.error || "Update failed");
       }
     } catch (err) {
-      toast.error("Update failed: " + (err.response?.data?.error || err.message));
+      toast.error(
+        "Update failed: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -346,29 +334,25 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
 
   return (
     <>
-      {/* Inject keyframes */}
       <style>{spinnerKeyframes}</style>
-
       <div style={styles.modalOverlay} onClick={handleClose}>
         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
           <div style={styles.modalHeader}>
             <h3 style={styles.modalTitle}>
-              <i className="bi bi-arrow-repeat"></i>
-              Step 6: Follow Up
+              <i className="bi bi-arrow-repeat"></i>Step 6: Follow Up
             </h3>
             <button
-              style={{ ...styles.closeBtn, ...(submitting && styles.btnDisabled) }}
+              style={{
+                ...styles.closeBtn,
+                ...(submitting && styles.btnDisabled),
+              }}
               onClick={handleClose}
               disabled={submitting}
             >
               &times;
             </button>
           </div>
-
-          {/* Body */}
           <div style={styles.modalBody}>
-            {/* Lead Info Card */}
             <div style={styles.leadInfoCard}>
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>EnQ No:</span>
@@ -389,7 +373,9 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
               <div style={lead.pdfFolder ? styles.infoRow : styles.infoRowLast}>
                 <span style={styles.infoLabel}>Follow-up Count:</span>
                 <span style={styles.infoValue}>
-                  <span style={styles.followCounterBadge}>{lead.step6FollowCounter || "0"}</span>
+                  <span style={styles.followCounterBadge}>
+                    {lead.step6FollowCounter || "0"}
+                  </span>
                 </span>
               </div>
               {lead.pdfFolder && (
@@ -409,11 +395,10 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
               )}
             </div>
 
-            {/* Status Selection */}
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <i className="bi bi-flag"></i>
-                Status <span style={styles.required}>*</span>
+                <i className="bi bi-flag"></i>Status{" "}
+                <span style={styles.required}>*</span>
               </label>
               <div style={styles.statusOptions}>
                 {STATUS_OPTIONS.map((opt) => (
@@ -421,7 +406,9 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
                     key={opt.value}
                     type="button"
                     style={getStatusButtonStyle(opt)}
-                    onClick={() => setStatus(status === opt.value ? "" : opt.value)}
+                    onClick={() =>
+                      setStatus(status === opt.value ? "" : opt.value)
+                    }
                     disabled={submitting}
                   >
                     <i className={`bi ${opt.icon}`}></i>
@@ -431,48 +418,55 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Reschedule: New Planned Date (required) */}
             {status === "Reschedule" && (
               <div style={styles.rescheduleGroup}>
                 <label style={styles.rescheduleLabel}>
-                  <i className="bi bi-calendar-plus"></i>
-                  New Follow-up Date & Time <span style={styles.required}>*</span>
+                  <i className="bi bi-calendar-plus"></i>New Follow-up Date &
+                  Time <span style={styles.required}>*</span>
                 </label>
                 <input
                   type="datetime-local"
-                  style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                  style={{
+                    ...styles.formInput,
+                    ...(submitting && styles.btnDisabled),
+                  }}
                   value={plannedOverride}
                   onChange={(e) => setPlannedOverride(e.target.value)}
                   disabled={submitting}
                 />
-                <small style={styles.formHint}>Counter will increase by 1</small>
+                <small style={styles.formHint}>
+                  Counter will increase by 1
+                </small>
               </div>
             )}
 
-            {/* Done: Step 7 Planned Date (required) */}
             {status === "Done" && (
               <div style={styles.nextStepPlannedGroup}>
                 <label style={styles.label}>
-                  <i className="bi bi-calendar-plus"></i>
-                  Step 7 (Agreement) Planned Date & Time <span style={styles.required}>*</span>
+                  <i className="bi bi-calendar-plus"></i>Step 7 (Agreement)
+                  Planned Date & Time <span style={styles.required}>*</span>
                 </label>
                 <input
                   type="datetime-local"
-                  style={{ ...styles.formInput, ...(submitting && styles.btnDisabled) }}
+                  style={{
+                    ...styles.formInput,
+                    ...(submitting && styles.btnDisabled),
+                  }}
                   value={nextStepPlanned}
                   onChange={(e) => setNextStepPlanned(e.target.value)}
                   disabled={submitting}
                 />
-                <small style={styles.formHint}>This will be the Planned date for Step 7: Agreement</small>
+                <small style={styles.formHint}>
+                  This will be the Planned date for Step 7: Agreement
+                </small>
               </div>
             )}
 
-            {/* Planned Override (when no status or Done) */}
             {status !== "Reschedule" && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>
-                  <i className="bi bi-calendar-event"></i>
-                  Planned Date Override (Optional)
+                  <i className="bi bi-calendar-event"></i>Planned Date Override
+                  (Optional)
                 </label>
                 <input
                   type="datetime-local"
@@ -480,15 +474,27 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
                   value={plannedOverride}
                   onChange={(e) => setPlannedOverride(e.target.value)}
                 />
-                <small style={styles.formHint}>Leave empty to keep current planned date</small>
+                <small style={styles.formHint}>
+                  Leave empty to keep current planned date
+                </small>
               </div>
             )}
+
+            {/* Remarks Section */}
+            <RemarksSection
+              ref={remarksRef}
+              enqNo={lead.enqNo}
+              stepName="Step 6: Follow Up"
+              disabled={submitting}
+            />
           </div>
 
-          {/* Footer */}
           <div style={styles.modalFooter}>
             <button
-              style={{ ...styles.btnCancel, ...(submitting && styles.btnDisabled) }}
+              style={{
+                ...styles.btnCancel,
+                ...(submitting && styles.btnDisabled),
+              }}
               onClick={handleClose}
               disabled={submitting}
             >
@@ -497,20 +503,19 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
             <button
               style={{
                 ...styles.btnPrimary,
-                ...((submitting || (!status && !plannedOverride)) && styles.btnDisabled),
+                ...((submitting || (!status && !plannedOverride)) &&
+                  styles.btnDisabled),
               }}
               onClick={handleSubmit}
               disabled={submitting || (!status && !plannedOverride)}
             >
               {submitting ? (
                 <>
-                  <span style={styles.spinnerSmall}></span>
-                  Updating...
+                  <span style={styles.spinnerSmall}></span>Updating...
                 </>
               ) : (
                 <>
-                  <i className="bi bi-check-lg"></i>
-                  Submit
+                  <i className="bi bi-check-lg"></i>Submit
                 </>
               )}
             </button>
@@ -521,12 +526,10 @@ function Step6Modal({ show, lead, onClose, onSuccess }) {
   );
 }
 
-// ============ TAB ============
 export default function Step6({ currentUser, onNextAction }) {
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  // Preview states
   const [previewLead, setPreviewLead] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const queryClient = useQueryClient();
@@ -536,9 +539,7 @@ export default function Step6({ currentUser, onNextAction }) {
     queryFn: () => api.get("/fms/step6").then((r) => r.data),
     staleTime: 30000,
   });
-
   const leads = data?.leads || [];
-
   const filteredLeads = leads.filter((lead) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -554,18 +555,15 @@ export default function Step6({ currentUser, onNextAction }) {
     setSelectedLead(lead);
     setShowModal(true);
   };
-
   const handlePreview = (lead) => {
     setPreviewLead(lead);
     setShowPreview(true);
   };
-
   const handleSuccess = () => {
     queryClient.invalidateQueries(["fms-step6"]);
     queryClient.invalidateQueries(["fms-step7"]);
   };
 
-  // Inline style for follow counter badge in table
   const followCounterBadgeStyle = {
     display: "inline-flex",
     alignItems: "center",
@@ -600,14 +598,12 @@ export default function Step6({ currentUser, onNextAction }) {
         </div>
         <span className="result-count">{filteredLeads.length} leads</span>
       </div>
-
       {error && (
         <div className="error-msg">
-          <i className="bi bi-exclamation-triangle"></i>
-          Failed to load: {error.message}
+          <i className="bi bi-exclamation-triangle"></i>Failed to load:{" "}
+          {error.message}
         </div>
       )}
-
       {isLoading ? (
         <div className="loading">
           <div className="spinner"></div>
@@ -617,7 +613,10 @@ export default function Step6({ currentUser, onNextAction }) {
         <div className="empty-state">
           <i className="bi bi-inbox"></i>
           <p>No leads pending in Step 6</p>
-          <small>Leads will appear here when Step 5 is Done and moved to Proposal Done Leads</small>
+          <small>
+            Leads will appear here when Step 5 is Done and moved to Proposal
+            Done Leads
+          </small>
         </div>
       ) : (
         <div className="table-wrapper">
@@ -636,7 +635,9 @@ export default function Step6({ currentUser, onNextAction }) {
                   {STEP6_COLUMNS.map((col) => (
                     <td key={col.key}>
                       {col.key === "step6FollowCounter" ? (
-                        <span style={followCounterBadgeStyle}>{lead[col.key] || "0"}</span>
+                        <span style={followCounterBadgeStyle}>
+                          {lead[col.key] || "0"}
+                        </span>
                       ) : (
                         lead[col.key] || "—"
                       )}
@@ -655,11 +656,12 @@ export default function Step6({ currentUser, onNextAction }) {
                     {onNextAction && (
                       <button
                         className="btn btn-nap"
-                        onClick={() => onNextAction(lead, "FMS", "Step 6: Follow Up")}
+                        onClick={() =>
+                          onNextAction(lead, "FMS", "Step 6: Follow Up")
+                        }
                         title="Next Action Plan"
                       >
-                        <i className="bi bi-ticket-perforated"></i>
-                        NAP
+                        <i className="bi bi-ticket-perforated"></i>NAP
                       </button>
                     )}
                     <button
@@ -667,8 +669,7 @@ export default function Step6({ currentUser, onNextAction }) {
                       onClick={() => handleAction(lead)}
                       title="Update Step 6"
                     >
-                      <i className="bi bi-pencil-square"></i>
-                      Action
+                      <i className="bi bi-pencil-square"></i>Action
                     </button>
                   </td>
                 </tr>
@@ -677,7 +678,6 @@ export default function Step6({ currentUser, onNextAction }) {
           </table>
         </div>
       )}
-
       <Step6Modal
         show={showModal}
         lead={selectedLead}
@@ -687,7 +687,6 @@ export default function Step6({ currentUser, onNextAction }) {
         }}
         onSuccess={handleSuccess}
       />
-
       <FilePreviewModal
         show={showPreview}
         onClose={() => {
@@ -696,7 +695,11 @@ export default function Step6({ currentUser, onNextAction }) {
         }}
         files={previewLead ? getPreviewFiles(previewLead) : []}
         folderLink={previewLead?.pdfFolder}
-        title={previewLead ? `Files — ${previewLead.clientName} (${previewLead.enqNo})` : "Files"}
+        title={
+          previewLead
+            ? `Files — ${previewLead.clientName} (${previewLead.enqNo})`
+            : "Files"
+        }
       />
     </div>
   );

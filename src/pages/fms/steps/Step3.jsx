@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
+import RemarksSection from "../../../components/Remarkssection.jsx";
 
 // Columns to display in table
 const STEP3_COLUMNS = [
@@ -155,19 +156,6 @@ const styles = {
     transition: "border-color 0.2s, box-shadow 0.2s",
     boxSizing: "border-box",
   },
-  formTextarea: {
-    width: "100%",
-    padding: "12px 14px",
-    fontSize: "14px",
-    border: "1px solid var(--border-primary, #d1d5db)",
-    borderRadius: "8px",
-    backgroundColor: "var(--bg-primary, #ffffff)",
-    color: "var(--text-primary, #111827)",
-    outline: "none",
-    resize: "vertical",
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-  },
   formHint: {
     display: "block",
     fontSize: "12px",
@@ -239,7 +227,6 @@ const styles = {
   },
 };
 
-// Add keyframes for spinner animation
 const spinnerKeyframes = `
   @keyframes spin {
     to { transform: rotate(360deg); }
@@ -250,38 +237,41 @@ const spinnerKeyframes = `
 function Step3Modal({ show, lead, onClose, onSuccess }) {
   const [status, setStatus] = useState("");
   const [plannedOverride, setPlannedOverride] = useState("");
-  const [remark, setRemark] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const remarksRef = React.useRef(null);
 
   if (!show || !lead) return null;
 
   const handleSubmit = async () => {
-    // Allow submit if either status or planned date is provided
     if (!status && !plannedOverride.trim()) {
       toast.warn("Please select a status or update planned date");
       return;
     }
 
-    // Confirm if moving to another sheet
     if (status && status !== "Done") {
       const confirmMsg = `Are you sure you want to move this lead to ${status === "Back to Pipeline" ? "Pipeline" : status}?`;
-      if (!window.confirm(confirmMsg)) {
-        return;
-      }
+      if (!window.confirm(confirmMsg)) return;
     }
 
     setSubmitting(true);
 
     try {
+      // Get remark text from RemarksSection
+      const remarkText = remarksRef.current?.getRemarkText() || "";
+
       const res = await api.post("/fms/step3/update", {
         rowIndex: lead.rowIndex,
         enqNo: lead.enqNo,
         status: status || null,
         plannedOverride: plannedOverride.trim() || null,
-        remark: remark.trim(),
+        remark: remarkText.trim(),
       });
 
       if (res.data.success) {
+        // Save remark to Remarks sheet if text exists
+        if (remarkText.trim()) {
+          await remarksRef.current.saveRemark(remarkText);
+        }
         toast.success(res.data.message);
         onSuccess?.();
         onClose();
@@ -299,7 +289,6 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
   const handleClose = () => {
     setStatus("");
     setPlannedOverride("");
-    setRemark("");
     onClose();
   };
 
@@ -318,12 +307,10 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
 
   return (
     <>
-      {/* Inject keyframes */}
       <style>{spinnerKeyframes}</style>
 
       <div style={styles.modalOverlay} onClick={handleClose}>
         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
           <div style={styles.modalHeader}>
             <h3 style={styles.modalTitle}>
               <i className="bi bi-people"></i>
@@ -338,9 +325,7 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
             </button>
           </div>
 
-          {/* Body */}
           <div style={styles.modalBody}>
-            {/* Lead Info Card */}
             <div style={styles.leadInfoCard}>
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>EnQ No:</span>
@@ -399,21 +384,8 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
               </small>
             </div>
 
-            {/* Remark */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <i className="bi bi-chat-left-text"></i>
-                Remark
-              </label>
-              <textarea
-                style={{ ...styles.formTextarea, ...(submitting && styles.btnDisabled) }}
-                placeholder="Enter meeting notes, observations, or any remarks..."
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                disabled={submitting}
-                rows={4}
-              />
-            </div>
+            {/* Remarks Section */}
+            <RemarksSection ref={remarksRef} enqNo={lead.enqNo} stepName="Step 3: Need Analysis Meeting" disabled={submitting} />
 
             {/* Warning for move actions */}
             {status && status !== "Done" && (
@@ -428,7 +400,6 @@ function Step3Modal({ show, lead, onClose, onSuccess }) {
             )}
           </div>
 
-          {/* Footer */}
           <div style={styles.modalFooter}>
             <button
               style={{ ...styles.btnCancel, ...(submitting && styles.btnDisabled) }}
@@ -471,7 +442,6 @@ export default function Step3({ currentUser, onNextAction }) {
   const [showModal, setShowModal] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch Step 3 leads
   const { data, isLoading, error } = useQuery({
     queryKey: ["fms-step3"],
     queryFn: () => api.get("/fms/step3").then((r) => r.data),
@@ -480,7 +450,6 @@ export default function Step3({ currentUser, onNextAction }) {
 
   const leads = data?.leads || [];
 
-  // Filter leads
   const filteredLeads = leads.filter((lead) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -507,7 +476,6 @@ export default function Step3({ currentUser, onNextAction }) {
 
   return (
     <div className="step-content">
-      {/* Search */}
       <div className="filter-bar">
         <div className="search-box">
           <i className="bi bi-search"></i>
@@ -527,7 +495,6 @@ export default function Step3({ currentUser, onNextAction }) {
         <span className="result-count">{filteredLeads.length} leads</span>
       </div>
 
-      {/* Error State */}
       {error && (
         <div className="error-msg">
           <i className="bi bi-exclamation-triangle"></i>
@@ -535,7 +502,6 @@ export default function Step3({ currentUser, onNextAction }) {
         </div>
       )}
 
-      {/* Loading State */}
       {isLoading ? (
         <div className="loading">
           <div className="spinner"></div>
@@ -591,7 +557,6 @@ export default function Step3({ currentUser, onNextAction }) {
         </div>
       )}
 
-      {/* Step 3 Modal */}
       <Step3Modal
         show={showModal}
         lead={selectedLead}

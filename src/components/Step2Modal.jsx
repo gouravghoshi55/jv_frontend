@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useRef } from "react";
 import { toast } from "react-toastify";
 import api from "../api.js";
+import RemarksSection from "./Remarkssection.jsx";
+
 
 const FILE_FIELDS = [
   { key: "aks", label: "Aks", colIndex: 14 },
@@ -14,6 +17,7 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
   const [files, setFiles] = useState({});
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
+  const remarksRef = useRef(null);
 
   if (!show || !lead) return null;
 
@@ -85,6 +89,11 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
       }
 
       toast.success("Documents uploaded successfully!");
+      // Save remark if entered
+const remarkText = remarksRef.current?.getRemarkText();
+if (remarkText && remarkText.trim()) {
+  await remarksRef.current.saveRemark(remarkText);
+}
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -203,6 +212,8 @@ export default function Step2Modal({ show, lead, onClose, onSuccess }) {
               <span>{progress}</span>
             </div>
           )}
+
+          <RemarksSection ref={remarksRef} enqNo={lead.enqNo} stepName="Step 2: Document Upload" disabled={uploading} />
         </div>
 
         <div className="modal-footer">

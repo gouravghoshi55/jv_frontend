@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../../api.js";
-import FilePreviewModal from "../../../components/Filepreviewmodal.jsx"
+import FilePreviewModal from "../../../components/Filepreviewmodal.jsx";
+import RemarksSection from "../../../components/Remarkssection.jsx";
 
 // Columns to display in table
 const STEP4_COLUMNS = [
@@ -18,27 +19,41 @@ const STEP4_COLUMNS = [
 
 const STATUS_OPTIONS = [
   { value: "Done", label: "Done", icon: "bi-check-circle", color: "#22c55e" },
-  { value: "Cold Lead", label: "Cold Lead", icon: "bi-snow2", color: "#3b82f6" },
-  { value: "Back to Pipeline", label: "Back to Pipeline", icon: "bi-arrow-return-left", color: "#eab308" },
-  { value: "Not Qualified Lead", label: "Not Qualified Lead", icon: "bi-x-circle", color: "#ef4444" },
+  {
+    value: "Cold Lead",
+    label: "Cold Lead",
+    icon: "bi-snow2",
+    color: "#3b82f6",
+  },
+  {
+    value: "Back to Pipeline",
+    label: "Back to Pipeline",
+    icon: "bi-arrow-return-left",
+    color: "#eab308",
+  },
+  {
+    value: "Not Qualified Lead",
+    label: "Not Qualified Lead",
+    icon: "bi-x-circle",
+    color: "#ef4444",
+  },
 ];
 
-// Only CAD File is file upload now
-const CAD_FILE_COL_INDEX = 28; // AC
+const CAD_FILE_COL_INDEX = 28;
 
 function getPreviewFiles(lead) {
   const files = [];
-  // Step 2 files
   if (lead.aks) files.push({ label: "AKS", link: lead.aks });
   if (lead.khasra) files.push({ label: "Khasra", link: lead.khasra });
-  if (lead.oldDocument) files.push({ label: "Old Document", link: lead.oldDocument });
-  if (lead.landSurvey) files.push({ label: "Land Survey", link: lead.landSurvey });
-  // Step 4 CAD file only
-  if (lead.step4CadFile) files.push({ label: "CAD File", link: lead.step4CadFile });
+  if (lead.oldDocument)
+    files.push({ label: "Old Document", link: lead.oldDocument });
+  if (lead.landSurvey)
+    files.push({ label: "Land Survey", link: lead.landSurvey });
+  if (lead.step4CadFile)
+    files.push({ label: "CAD File", link: lead.step4CadFile });
   return files;
 }
 
-// ============ INLINE STYLES ============
 const styles = {
   modalOverlay: {
     position: "fixed",
@@ -92,11 +107,7 @@ const styles = {
     lineHeight: 1,
     transition: "background-color 0.2s",
   },
-  modalBody: {
-    padding: "20px",
-    overflowY: "auto",
-    flex: 1,
-  },
+  modalBody: { padding: "20px", overflowY: "auto", flex: 1 },
   leadInfoCard: {
     backgroundColor: "var(--bg-tertiary, #f3f4f6)",
     borderRadius: "8px",
@@ -157,12 +168,8 @@ const styles = {
     padding: "6px 0",
     fontSize: "13px",
   },
-  fileLinkLabel: {
-    color: "var(--text-secondary, #6b7280)",
-  },
-  fileLinkValue: {
-    color: "var(--text-primary, #111827)",
-  },
+  fileLinkLabel: { color: "var(--text-secondary, #6b7280)" },
+  fileLinkValue: { color: "var(--text-primary, #111827)" },
   fileLinkAnchor: {
     color: "#3b82f6",
     textDecoration: "none",
@@ -170,9 +177,7 @@ const styles = {
     alignItems: "center",
     gap: "4px",
   },
-  formSection: {
-    marginBottom: "16px",
-  },
+  formSection: { marginBottom: "16px" },
   sectionTitle: {
     marginBottom: "12px",
     color: "var(--text-primary, #111827)",
@@ -182,9 +187,7 @@ const styles = {
     alignItems: "center",
     gap: "6px",
   },
-  formGroup: {
-    marginBottom: "16px",
-  },
+  formGroup: { marginBottom: "16px" },
   label: {
     display: "flex",
     alignItems: "center",
@@ -194,9 +197,7 @@ const styles = {
     color: "var(--text-primary, #111827)",
     marginBottom: "8px",
   },
-  required: {
-    color: "#ef4444",
-  },
+  required: { color: "#ef4444" },
   formInput: {
     width: "100%",
     padding: "12px 14px",
@@ -237,12 +238,8 @@ const styles = {
     borderTop: "1px solid var(--border-primary, #e5e7eb)",
     margin: "20px 0",
   },
-  fileUploads: {
-    marginBottom: "16px",
-  },
-  fileUploadRow: {
-    marginBottom: "12px",
-  },
+  fileUploads: { marginBottom: "16px" },
+  fileUploadRow: { marginBottom: "12px" },
   fileLabel: {
     display: "block",
     fontSize: "14px",
@@ -250,14 +247,8 @@ const styles = {
     color: "var(--text-primary, #111827)",
     marginBottom: "8px",
   },
-  fileInputWrapper: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  fileInputHidden: {
-    display: "none",
-  },
+  fileInputWrapper: { display: "flex", alignItems: "center", gap: "8px" },
+  fileInputHidden: { display: "none" },
   fileInputBtn: {
     flex: 1,
     padding: "12px 14px",
@@ -339,11 +330,7 @@ const styles = {
     color: "#b45309",
     fontSize: "14px",
   },
-  warningIcon: {
-    fontSize: "18px",
-    flexShrink: 0,
-    marginTop: "2px",
-  },
+  warningIcon: { fontSize: "18px", flexShrink: 0, marginTop: "2px" },
   modalFooter: {
     display: "flex",
     alignItems: "center",
@@ -378,10 +365,7 @@ const styles = {
     gap: "6px",
     transition: "background-color 0.2s",
   },
-  btnDisabled: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
+  btnDisabled: { opacity: 0.6, cursor: "not-allowed" },
   spinnerSmall: {
     width: "16px",
     height: "16px",
@@ -392,32 +376,21 @@ const styles = {
   },
 };
 
-// Add keyframes for spinner animation
-const spinnerKeyframes = `
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-`;
+const spinnerKeyframes = `@keyframes spin { to { transform: rotate(360deg); } }`;
 
-// ============ MODAL COMPONENT ============
 function Step4Modal({ show, lead, onClose, onSuccess }) {
   const [status, setStatus] = useState("");
   const [plannedOverride, setPlannedOverride] = useState("");
   const [nextStepPlanned, setNextStepPlanned] = useState("");
-  
-  // Text fields
   const [typeOfProject, setTypeOfProject] = useState("");
   const [calcLink, setCalcLink] = useState("");
-  
-  // CAD File upload
   const [cadFile, setCadFile] = useState(null);
-  
   const [uploading, setUploading] = useState(false);
   const [savingText, setSavingText] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const remarksRef = React.useRef(null);
 
-  // Initialize text fields when modal opens with lead data
   React.useEffect(() => {
     if (lead) {
       setTypeOfProject(lead.step4TypeOfProject || "");
@@ -427,12 +400,13 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
 
   if (!show || !lead) return null;
 
-  const fileToBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
   const getFileNames = (fileList) => {
     if (!fileList || fileList.length === 0) return "Choose File";
@@ -440,13 +414,11 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
     return `${fileList.length} files selected`;
   };
 
-  // Save text fields (Type of Project & Calculation Link)
   const handleSaveTextFields = async () => {
     if (!typeOfProject.trim() && !calcLink.trim()) {
       toast.warn("Please enter at least one text field to save");
       return;
     }
-
     setSavingText(true);
     try {
       await api.post("/fms/step4/save-text", {
@@ -464,7 +436,6 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
     }
   };
 
-  // Upload CAD File
   const handleUploadCadFile = async () => {
     if (!cadFile || cadFile.length === 0) {
       toast.warn("Please select a CAD file to upload");
@@ -474,7 +445,6 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
       toast.error("Parent folder not found. Please complete Step 2 first.");
       return;
     }
-
     setUploading(true);
     try {
       for (let j = 0; j < cadFile.length; j++) {
@@ -494,7 +464,9 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
       setCadFile(null);
       onSuccess?.();
     } catch (err) {
-      toast.error("Upload failed: " + (err.response?.data?.error || err.message));
+      toast.error(
+        "Upload failed: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setUploading(false);
       setUploadProgress("");
@@ -511,7 +483,12 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
       return;
     }
     if (status && status !== "Done") {
-      if (!window.confirm(`Move this lead to ${status === "Back to Pipeline" ? "Pipeline" : status}?`)) return;
+      if (
+        !window.confirm(
+          `Move this lead to ${status === "Back to Pipeline" ? "Pipeline" : status}?`,
+        )
+      )
+        return;
     }
 
     setSubmitting(true);
@@ -524,6 +501,11 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
         nextStepPlanned: nextStepPlanned.trim() || null,
       });
       if (res.data.success) {
+        // Save remark on submit
+        const remarkText = remarksRef.current?.getRemarkText() || "";
+        if (remarkText.trim()) {
+          await remarksRef.current.saveRemark(remarkText);
+        }
         toast.success(res.data.message);
         onSuccess?.();
         onClose();
@@ -531,7 +513,9 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
         throw new Error(res.data.error || "Update failed");
       }
     } catch (err) {
-      toast.error("Update failed: " + (err.response?.data?.error || err.message));
+      toast.error(
+        "Update failed: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -564,19 +548,19 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
 
   return (
     <>
-      {/* Inject keyframes */}
       <style>{spinnerKeyframes}</style>
-
       <div style={styles.modalOverlay} onClick={handleClose}>
         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
           <div style={styles.modalHeader}>
             <h3 style={styles.modalTitle}>
-              <i className="bi bi-clipboard-data"></i>
-              Step 4: Conceptual Plan + Fill The Form
+              <i className="bi bi-clipboard-data"></i>Step 4: Conceptual Plan +
+              Fill The Form
             </h3>
             <button
-              style={{ ...styles.closeBtn, ...(isProcessing && styles.btnDisabled) }}
+              style={{
+                ...styles.closeBtn,
+                ...(isProcessing && styles.btnDisabled),
+              }}
               onClick={handleClose}
               disabled={isProcessing}
             >
@@ -584,9 +568,7 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
             </button>
           </div>
 
-          {/* Body */}
           <div style={styles.modalBody}>
-            {/* Lead Info Card */}
             <div style={styles.leadInfoCard}>
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>EnQ No:</span>
@@ -608,7 +590,12 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                 <div style={styles.infoRowLast}>
                   <span style={styles.infoLabel}>Folder:</span>
                   <span style={styles.infoValue}>
-                    <a href={lead.pdfFolder} target="_blank" rel="noopener noreferrer" style={styles.folderLink}>
+                    <a
+                      href={lead.pdfFolder}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.folderLink}
+                    >
                       <i className="bi bi-folder2-open"></i> Open Drive Folder
                     </a>
                   </span>
@@ -616,23 +603,30 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
               )}
             </div>
 
-            {/* Existing Data Card */}
-            {(lead.step4TypeOfProject || lead.step4CadFile || lead.step4CalcLink) && (
+            {(lead.step4TypeOfProject ||
+              lead.step4CadFile ||
+              lead.step4CalcLink) && (
               <div style={styles.existingFilesCard}>
                 <h4 style={styles.existingFilesTitle}>
-                  <i className="bi bi-info-circle"></i>
-                  Saved Data
+                  <i className="bi bi-info-circle"></i>Saved Data
                 </h4>
                 {lead.step4TypeOfProject && (
                   <div style={styles.fileLinkRow}>
                     <span style={styles.fileLinkLabel}>Type Of Project:</span>
-                    <span style={styles.fileLinkValue}>{lead.step4TypeOfProject}</span>
+                    <span style={styles.fileLinkValue}>
+                      {lead.step4TypeOfProject}
+                    </span>
                   </div>
                 )}
                 {lead.step4CadFile && (
                   <div style={styles.fileLinkRow}>
                     <span style={styles.fileLinkLabel}>CAD File:</span>
-                    <a href={lead.step4CadFile} target="_blank" rel="noopener noreferrer" style={styles.fileLinkAnchor}>
+                    <a
+                      href={lead.step4CadFile}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.fileLinkAnchor}
+                    >
                       <i className="bi bi-box-arrow-up-right"></i> View
                     </a>
                   </div>
@@ -640,56 +634,61 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                 {lead.step4CalcLink && (
                   <div style={styles.fileLinkRow}>
                     <span style={styles.fileLinkLabel}>Calculation Link:</span>
-                    <span style={styles.fileLinkValue}>{lead.step4CalcLink}</span>
+                    <span style={styles.fileLinkValue}>
+                      {lead.step4CalcLink}
+                    </span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Text Fields Section */}
             <div style={styles.formSection}>
               <h4 style={styles.sectionTitle}>
-                <i className="bi bi-pencil-square"></i>
-                Project Details
+                <i className="bi bi-pencil-square"></i>Project Details
               </h4>
-
               <div style={styles.formGroup}>
                 <label style={styles.label}>
-                  <i className="bi bi-building"></i>
-                  Type Of Project
+                  <i className="bi bi-building"></i>Type Of Project
                 </label>
                 <input
                   type="text"
-                  style={{ ...styles.formInput, ...(isProcessing && styles.btnDisabled) }}
+                  style={{
+                    ...styles.formInput,
+                    ...(isProcessing && styles.btnDisabled),
+                  }}
                   placeholder="Enter project type (e.g., Residential, Commercial, Industrial)"
                   value={typeOfProject}
                   onChange={(e) => setTypeOfProject(e.target.value)}
                   disabled={isProcessing}
                 />
               </div>
-
               <div style={styles.formGroup}>
                 <label style={styles.label}>
-                  <i className="bi bi-link-45deg"></i>
-                  Calculation Link
+                  <i className="bi bi-link-45deg"></i>Calculation Link
                 </label>
                 <input
                   type="text"
-                  style={{ ...styles.formInput, ...(isProcessing && styles.btnDisabled) }}
+                  style={{
+                    ...styles.formInput,
+                    ...(isProcessing && styles.btnDisabled),
+                  }}
                   placeholder="Enter calculation link or reference"
                   value={calcLink}
                   onChange={(e) => setCalcLink(e.target.value)}
                   disabled={isProcessing}
                 />
               </div>
-
               <button
                 style={{
                   ...styles.btnSaveText,
-                  ...((isProcessing || (!typeOfProject.trim() && !calcLink.trim())) && styles.btnDisabled),
+                  ...((isProcessing ||
+                    (!typeOfProject.trim() && !calcLink.trim())) &&
+                    styles.btnDisabled),
                 }}
                 onClick={handleSaveTextFields}
-                disabled={isProcessing || (!typeOfProject.trim() && !calcLink.trim())}
+                disabled={
+                  isProcessing || (!typeOfProject.trim() && !calcLink.trim())
+                }
               >
                 {savingText ? (
                   <>
@@ -705,13 +704,10 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
 
             <hr style={styles.divider} />
 
-            {/* CAD File Upload Section */}
             <div style={styles.fileUploads}>
               <h4 style={styles.sectionTitle}>
-                <i className="bi bi-cloud-upload"></i>
-                Upload CAD File
+                <i className="bi bi-cloud-upload"></i>Upload CAD File
               </h4>
-
               <div style={styles.fileUploadRow}>
                 <label style={styles.fileLabel}>CAD File of the Plan</label>
                 <div style={styles.fileInputWrapper}>
@@ -729,7 +725,10 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                   </label>
                   {cadFile && cadFile.length > 0 && (
                     <button
-                      style={{ ...styles.fileClearBtn, ...(isProcessing && styles.btnDisabled) }}
+                      style={{
+                        ...styles.fileClearBtn,
+                        ...(isProcessing && styles.btnDisabled),
+                      }}
                       onClick={() => setCadFile(null)}
                       disabled={isProcessing}
                     >
@@ -738,11 +737,11 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                   )}
                 </div>
               </div>
-
               <button
                 style={{
                   ...styles.btnUploadFiles,
-                  ...((isProcessing || !cadFile || cadFile.length === 0) && styles.btnDisabled),
+                  ...((isProcessing || !cadFile || cadFile.length === 0) &&
+                    styles.btnDisabled),
                 }}
                 onClick={handleUploadCadFile}
                 disabled={isProcessing || !cadFile || cadFile.length === 0}
@@ -753,8 +752,7 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                   </>
                 ) : (
                   <>
-                    <i className="bi bi-cloud-arrow-up"></i>
-                    Upload CAD File
+                    <i className="bi bi-cloud-arrow-up"></i>Upload CAD File
                   </>
                 )}
               </button>
@@ -762,11 +760,10 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
 
             <hr style={styles.divider} />
 
-            {/* Status Section */}
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <i className="bi bi-flag"></i>
-                Status <span style={styles.required}>*</span>
+                <i className="bi bi-flag"></i>Status{" "}
+                <span style={styles.required}>*</span>
               </label>
               <div style={styles.statusOptions}>
                 {STATUS_OPTIONS.map((opt) => (
@@ -787,24 +784,29 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
             {status === "Done" && (
               <div style={styles.nextStepPlannedGroup}>
                 <label style={styles.label}>
-                  <i className="bi bi-calendar-plus"></i>
-                  Step 5 Planned Date & Time <span style={styles.required}>*</span>
+                  <i className="bi bi-calendar-plus"></i>Step 5 Planned Date &
+                  Time <span style={styles.required}>*</span>
                 </label>
                 <input
                   type="datetime-local"
-                  style={{ ...styles.formInput, ...(isProcessing && styles.btnDisabled) }}
+                  style={{
+                    ...styles.formInput,
+                    ...(isProcessing && styles.btnDisabled),
+                  }}
                   value={nextStepPlanned}
                   onChange={(e) => setNextStepPlanned(e.target.value)}
                   disabled={isProcessing}
                 />
-                <small style={styles.formHint}>This will be the Planned date for Step 5: Proposal</small>
+                <small style={styles.formHint}>
+                  This will be the Planned date for Step 5: Proposal
+                </small>
               </div>
             )}
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <i className="bi bi-calendar-event"></i>
-                Planned Date Override (Optional)
+                <i className="bi bi-calendar-event"></i>Planned Date Override
+                (Optional)
               </label>
               <input
                 type="datetime-local"
@@ -812,25 +814,42 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                 value={plannedOverride}
                 onChange={(e) => setPlannedOverride(e.target.value)}
               />
-              <small style={styles.formHint}>Leave empty to keep current planned date</small>
+              <small style={styles.formHint}>
+                Leave empty to keep current planned date
+              </small>
             </div>
+
+            {/* Remarks Section */}
+            <RemarksSection
+              ref={remarksRef}
+              enqNo={lead.enqNo}
+              stepName="Step 4: Proposal Preparation"
+              disabled={isProcessing}
+            />
 
             {status && status !== "Done" && (
               <div style={styles.warningBox}>
-                <i className="bi bi-exclamation-triangle" style={styles.warningIcon}></i>
+                <i
+                  className="bi bi-exclamation-triangle"
+                  style={styles.warningIcon}
+                ></i>
                 <span>
                   This will move the lead to{" "}
-                  <strong>{status === "Back to Pipeline" ? "Pipeline" : status}</strong> and
-                  remove it from FMS.
+                  <strong>
+                    {status === "Back to Pipeline" ? "Pipeline" : status}
+                  </strong>{" "}
+                  and remove it from FMS.
                 </span>
               </div>
             )}
           </div>
 
-          {/* Footer */}
           <div style={styles.modalFooter}>
             <button
-              style={{ ...styles.btnCancel, ...(isProcessing && styles.btnDisabled) }}
+              style={{
+                ...styles.btnCancel,
+                ...(isProcessing && styles.btnDisabled),
+              }}
               onClick={handleClose}
               disabled={isProcessing}
             >
@@ -839,7 +858,8 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
             <button
               style={{
                 ...styles.btnPrimary,
-                ...((isProcessing || (!status && !plannedOverride)) && styles.btnDisabled),
+                ...((isProcessing || (!status && !plannedOverride)) &&
+                  styles.btnDisabled),
               }}
               onClick={handleSubmitStatus}
               disabled={isProcessing || (!status && !plannedOverride)}
@@ -850,8 +870,7 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
                 </>
               ) : (
                 <>
-                  <i className="bi bi-check-lg"></i>
-                  Submit Status
+                  <i className="bi bi-check-lg"></i>Submit Status
                 </>
               )}
             </button>
@@ -862,7 +881,6 @@ function Step4Modal({ show, lead, onClose, onSuccess }) {
   );
 }
 
-// ============ TAB CONTENT ============
 export default function Step4({ currentUser, onNextAction }) {
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
@@ -876,9 +894,7 @@ export default function Step4({ currentUser, onNextAction }) {
     queryFn: () => api.get("/fms/step4").then((r) => r.data),
     staleTime: 30000,
   });
-
   const leads = data?.leads || [];
-
   const filteredLeads = leads.filter((lead) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -894,12 +910,10 @@ export default function Step4({ currentUser, onNextAction }) {
     setSelectedLead(lead);
     setShowModal(true);
   };
-
   const handlePreview = (lead) => {
     setPreviewLead(lead);
     setShowPreview(true);
   };
-
   const handleSuccess = () => {
     queryClient.invalidateQueries(["fms-step4"]);
     queryClient.invalidateQueries(["fms-step5"]);
@@ -928,14 +942,12 @@ export default function Step4({ currentUser, onNextAction }) {
         </div>
         <span className="result-count">{filteredLeads.length} leads</span>
       </div>
-
       {error && (
         <div className="error-msg">
-          <i className="bi bi-exclamation-triangle"></i>
-          Failed to load: {error.message}
+          <i className="bi bi-exclamation-triangle"></i>Failed to load:{" "}
+          {error.message}
         </div>
       )}
-
       {isLoading ? (
         <div className="loading">
           <div className="spinner"></div>
@@ -945,7 +957,10 @@ export default function Step4({ currentUser, onNextAction }) {
         <div className="empty-state">
           <i className="bi bi-inbox"></i>
           <p>No leads pending in Step 4</p>
-          <small>Leads will appear here when Step 3 is complete and Step 4 Planned date is set</small>
+          <small>
+            Leads will appear here when Step 3 is complete and Step 4 Planned
+            date is set
+          </small>
         </div>
       ) : (
         <div className="table-wrapper">
@@ -977,11 +992,12 @@ export default function Step4({ currentUser, onNextAction }) {
                     {onNextAction && (
                       <button
                         className="btn btn-nap"
-                        onClick={() => onNextAction(lead, "FMS", "Step 4: Conceptual Plan")}
+                        onClick={() =>
+                          onNextAction(lead, "FMS", "Step 4: Conceptual Plan")
+                        }
                         title="Next Action Plan"
                       >
-                        <i className="bi bi-ticket-perforated"></i>
-                        NAP
+                        <i className="bi bi-ticket-perforated"></i>NAP
                       </button>
                     )}
                     <button
@@ -989,8 +1005,7 @@ export default function Step4({ currentUser, onNextAction }) {
                       onClick={() => handleAction(lead)}
                       title="Update Step 4"
                     >
-                      <i className="bi bi-pencil-square"></i>
-                      Action
+                      <i className="bi bi-pencil-square"></i>Action
                     </button>
                   </td>
                 </tr>
@@ -999,7 +1014,6 @@ export default function Step4({ currentUser, onNextAction }) {
           </table>
         </div>
       )}
-
       <Step4Modal
         show={showModal}
         lead={selectedLead}
@@ -1009,7 +1023,6 @@ export default function Step4({ currentUser, onNextAction }) {
         }}
         onSuccess={handleSuccess}
       />
-
       <FilePreviewModal
         show={showPreview}
         onClose={() => {
@@ -1018,7 +1031,11 @@ export default function Step4({ currentUser, onNextAction }) {
         }}
         files={previewLead ? getPreviewFiles(previewLead) : []}
         folderLink={previewLead?.pdfFolder}
-        title={previewLead ? `Files — ${previewLead.clientName} (${previewLead.enqNo})` : "Files"}
+        title={
+          previewLead
+            ? `Files — ${previewLead.clientName} (${previewLead.enqNo})`
+            : "Files"
+        }
       />
     </div>
   );

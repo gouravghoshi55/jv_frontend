@@ -2399,3 +2399,132 @@ textarea.form-control {
   border-radius: 12px;
 }
 
+/* Confirmed Date Range Filter */
+.nap-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background-color: var(--bg-secondary, #f9fafb);
+  border: 1px solid var(--border-primary, #e5e7eb);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.date-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.date-inputs-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-input-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-input-label {
+  font-size: 11px;
+  color: var(--text-secondary, #6b7280);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filter-date-input {
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: 6px;
+  background-color: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #111827);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 140px;
+}
+
+.filter-date-input:focus {
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.date-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: 6px;
+  background-color: var(--bg-primary, #ffffff);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover {
+  background-color: var(--accent-primary, #6366f1);
+  color: #ffffff;
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.btn-clear-filters {
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.btn-clear-filters:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.active-filter-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  background-color: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 6px;
+  color: var(--accent-primary, #6366f1);
+  font-size: 13px;
+}
+
+.active-filter-info strong {
+  color: var(--text-primary, #111827);
+  font-weight: 600;
+}

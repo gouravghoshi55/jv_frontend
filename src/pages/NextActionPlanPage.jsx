@@ -9,7 +9,6 @@ function parseSheetDate(dateStr) {
   const str = String(dateStr).trim();
   if (!str) return null;
 
-  // DD/MM/YYYY or DD/MM/YYYY, HH:MM:SS
   const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[, ]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (match) {
     const [, dd, mm, yyyy, hh, mi, ss] = match;
@@ -25,7 +24,6 @@ function parseSheetDate(dateStr) {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // ISO YYYY-MM-DD fallback
   const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) {
     const d = new Date(str);
@@ -38,16 +36,42 @@ function parseSheetDate(dateStr) {
   return null;
 }
 
+// ✅ Parse confirmed date for range comparison (returns midnight - start of day)
+function parseDateForRange(dateStr) {
+  if (!dateStr) return null;
+  const str = String(dateStr).trim();
+  if (!str) return null;
+
+  const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (match) {
+    const [, dd, mm, yyyy] = match;
+    const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), 0, 0, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+  }
+
+  return null;
+}
+
 export default function NextActionPlanPage({ currentUser }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterAssignee, setFilterAssignee] = useState("");
+  const [confirmDateFrom, setConfirmDateFrom] = useState("");  // ✅ NEW
+  const [confirmDateTo, setConfirmDateTo] = useState("");      // ✅ NEW
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   const isAdmin = currentUser?.role?.toLowerCase() === "admin";
 
-  // Fetch all tickets
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["next-action-plan-tickets"],
     queryFn: async () => {
@@ -57,7 +81,6 @@ export default function NextActionPlanPage({ currentUser }) {
     staleTime: 30000,
   });
 
-  // Fetch users for filter dropdown
   const { data: usersData } = useQuery({
     queryKey: ["nap-users"],
     queryFn: async () => {
@@ -69,6 +92,10 @@ export default function NextActionPlanPage({ currentUser }) {
 
   const tickets = data || [];
   const users = usersData || [];
+
+  // ✅ Parse date range filter values once
+  const dateFromObj = confirmDateFrom ? new Date(confirmDateFrom + "T00:00:00") : null;
+  const dateToObj = confirmDateTo ? new Date(confirmDateTo + "T23:59:59") : null;
 
   // Filters
   const filteredTickets = tickets.filter((t) => {
@@ -83,15 +110,26 @@ export default function NextActionPlanPage({ currentUser }) {
     const matchesStatus = !filterStatus || t.status === filterStatus;
     const matchesAssignee = !filterAssignee || t.assignedTo === filterAssignee;
 
-    return matchesSearch && matchesStatus && matchesAssignee;
+    // ✅ NEW: Confirmed Date Range Filter
+    let matchesConfirmDate = true;
+    if (dateFromObj || dateToObj) {
+      const confirmedDateObj = parseDateForRange(t.confirmedDate);
+      if (!confirmedDateObj) {
+        // If no confirmed date, exclude when filter is active
+        matchesConfirmDate = false;
+      } else {
+        if (dateFromObj && confirmedDateObj < dateFromObj) matchesConfirmDate = false;
+        if (dateToObj && confirmedDateObj > dateToObj) matchesConfirmDate = false;
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesAssignee && matchesConfirmDate;
   });
 
-  // ✅ FIXED: Properly parse DD/MM/YYYY format
   const isOverdue = (ticket) => {
     const statusLower = ticket.status?.toLowerCase();
     if (statusLower === "completed" || statusLower === "rejected") return false;
 
-    // Priority: Revised > Confirmed > Desired
     const checkDate = ticket.revisedDate || ticket.confirmedDate || ticket.desiredDate;
     if (!checkDate) return false;
 
@@ -128,6 +166,49 @@ export default function NextActionPlanPage({ currentUser }) {
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setShowUpdateModal(true);
+  };
+
+  // ✅ Reset all filters
+  const handleClearFilters = () => {
+    setSearch("");
+    setFilterStatus("");
+    setFilterAssignee("");
+    setConfirmDateFrom("");
+    setConfirmDateTo("");
+  };
+
+  const hasActiveFilters = search || filterStatus || filterAssignee || confirmDateFrom || confirmDateTo;
+
+  // ✅ Quick presets for confirm date range
+  const setQuickRange = (preset) => {
+    const today = new Date();
+    const fmt = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    if (preset === "today") {
+      const t = fmt(today);
+      setConfirmDateFrom(t);
+      setConfirmDateTo(t);
+    } else if (preset === "week") {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 7);
+      setConfirmDateFrom(fmt(start));
+      setConfirmDateTo(fmt(today));
+    } else if (preset === "month") {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 30);
+      setConfirmDateFrom(fmt(start));
+      setConfirmDateTo(fmt(today));
+    } else if (preset === "thisMonth") {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setConfirmDateFrom(fmt(start));
+      setConfirmDateTo(fmt(end));
+    }
   };
 
   return (
@@ -181,7 +262,7 @@ export default function NextActionPlanPage({ currentUser }) {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Filters Row 1 — Search, Status, Assignee, Refresh */}
       <div className="nap-filters">
         <div className="search-box">
           <i className="bi bi-search"></i>
@@ -226,6 +307,64 @@ export default function NextActionPlanPage({ currentUser }) {
         </button>
       </div>
 
+      {/* ✅ NEW: Confirmed Date Range Filter Row */}
+      <div className="nap-date-filter">
+        <div className="date-filter-group">
+          <label className="date-filter-label">
+            <i className="bi bi-calendar-check" style={{ marginRight: 6 }}></i>
+            Confirmed Date Range:
+          </label>
+
+          <div className="date-inputs-wrapper">
+            <div className="date-input-item">
+              <span className="date-input-label">From</span>
+              <input
+                type="date"
+                value={confirmDateFrom}
+                onChange={(e) => setConfirmDateFrom(e.target.value)}
+                className="filter-date-input"
+                max={confirmDateTo || undefined}
+              />
+            </div>
+
+            <div className="date-input-item">
+              <span className="date-input-label">To</span>
+              <input
+                type="date"
+                value={confirmDateTo}
+                onChange={(e) => setConfirmDateTo(e.target.value)}
+                className="filter-date-input"
+                min={confirmDateFrom || undefined}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Quick range presets */}
+        <div className="date-presets">
+          <button className="preset-btn" onClick={() => setQuickRange("today")}>Today</button>
+          <button className="preset-btn" onClick={() => setQuickRange("week")}>Last 7 Days</button>
+          <button className="preset-btn" onClick={() => setQuickRange("month")}>Last 30 Days</button>
+          <button className="preset-btn" onClick={() => setQuickRange("thisMonth")}>This Month</button>
+        </div>
+
+        {hasActiveFilters && (
+          <button className="btn-clear-filters" onClick={handleClearFilters}>
+            <i className="bi bi-x-circle"></i> Clear All
+          </button>
+        )}
+      </div>
+
+      {/* Active Filters Indicator */}
+      {(confirmDateFrom || confirmDateTo) && (
+        <div className="active-filter-info">
+          <i className="bi bi-funnel-fill"></i>
+          Showing tickets with Confirmed Date
+          {confirmDateFrom && <> from <strong>{confirmDateFrom}</strong></>}
+          {confirmDateTo && <> to <strong>{confirmDateTo}</strong></>}
+        </div>
+      )}
+
       {/* Table */}
       {isLoading ? (
         <div className="loading">
@@ -236,6 +375,11 @@ export default function NextActionPlanPage({ currentUser }) {
         <div className="empty-state">
           <i className="bi bi-ticket-perforated"></i>
           <p>No tickets found</p>
+          {hasActiveFilters && (
+            <button className="btn btn-ghost" onClick={handleClearFilters} style={{ marginTop: 10 }}>
+              Clear Filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="table-wrapper">

@@ -2805,3 +2805,28 @@ textarea.form-control {
     grid-template-columns: 1fr;
   }
 }
+
+/* Highlight Raised date in card */
+.meta-item.meta-highlight {
+  background-color: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.meta-item.meta-highlight .meta-label {
+  color: var(--accent-primary, #6366f1);
+}
+
+.meta-item.meta-highlight .meta-value {
+  color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+}
+
+/* Highlight Raised date in notification panel */
+.notif-meta-raised {
+  color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+}
+
+.notif-meta-raised i {
+  color: var(--accent-primary, #6366f1);
+}

@@ -5,19 +5,16 @@ import api from "../api.js";
 // Helper: Convert sheet date format (DD/MM/YYYY or DD/MM/YYYY HH:MM:SS) to YYYY-MM-DD for input
 function sheetDateToInputDate(sheetDate) {
   if (!sheetDate) return "";
-  // Try DD/MM/YYYY format first
   const ddmmMatch = sheetDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (ddmmMatch) {
     const [, dd, mm, yyyy] = ddmmMatch;
     return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
-  // Try YYYY-MM-DD format (already correct)
   const isoMatch = sheetDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) return isoMatch[0];
   return "";
 }
 
-// Helper: Convert YYYY-MM-DD (input) to DD/MM/YYYY (sheet format)
 function inputDateToSheetDate(inputDate) {
   if (!inputDate) return "";
   const match = inputDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -45,7 +42,6 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
   useEffect(() => {
     if (show && ticket) {
       setStatus(ticket.status || "");
-      // ✅ Convert sheet date to input format
       setConfirmedDate(sheetDateToInputDate(ticket.confirmedDate));
       setRevisedDate(sheetDateToInputDate(ticket.revisedDate));
       setPcRemarks(ticket.pcRemarks || "");
@@ -58,45 +54,32 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
     try {
       const payload = { rowIndex: ticket.rowIndex };
 
-      // ✅ Convert input dates back to sheet format before sending
       const confirmedDateSheet = inputDateToSheetDate(confirmedDate);
       const revisedDateSheet = inputDateToSheetDate(revisedDate);
       const originalConfirmedSheet = ticket.confirmedDate || "";
       const originalRevisedSheet = ticket.revisedDate || "";
 
-      // ============================
-      // ADMIN AND PC: Full control
-      // ============================
       if (isAdminOrPC) {
-        // Status change
         if (status !== ticket.status) {
           payload.status = status;
         }
 
-        // Confirmed Date change
         if (confirmedDateSheet !== originalConfirmedSheet) {
           payload.confirmedDate = confirmedDateSheet;
         }
 
-        // PC Remarks change
         if (pcRemarks !== ticket.pcRemarks) {
           payload.pcRemarks = pcRemarks;
         }
 
-        // ✅ FIX: If status is "Date Revision Requested" AND revised date is set,
-        // ALWAYS send status + revisedDate together so backend increments counter
         if (status === "Date Revision Requested" && revisedDateSheet) {
           payload.status = "Date Revision Requested";
           payload.revisedDate = revisedDateSheet;
         } else if (revisedDateSheet !== originalRevisedSheet) {
-          // Just date change, no revision tracking
           payload.revisedDate = revisedDateSheet;
         }
       }
 
-      // ============================
-      // ASSIGNED DOER: Limited control
-      // ============================
       if (isAssignedDoer && !isAdminOrPC) {
         if (doerRemarks !== ticket.doerRemarks) {
           payload.doerRemarks = doerRemarks;
@@ -124,14 +107,12 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
         }
       }
 
-      // ✅ Validation: Date Revision Requested MUST have a revised date
       if (payload.status === "Date Revision Requested" && !payload.revisedDate) {
         toast.warn("Please select a Revised Date when requesting date revision");
         setLoading(false);
         return;
       }
 
-      // Check if anything actually changed
       const keys = Object.keys(payload).filter((k) => k !== "rowIndex");
       if (keys.length === 0) {
         toast.info("No changes to save");
@@ -214,6 +195,16 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
                 <span className="label">Raised By</span>
                 <span className="value">{ticket.raisedBy}</span>
               </div>
+              {/* ✅ NEW: Raised Date */}
+              <div className="summary-item">
+                <span className="label">
+                  <i className="bi bi-calendar-plus" style={{ marginRight: 4 }}></i>
+                  Raised Date
+                </span>
+                <span className="value" style={{ color: "var(--accent-primary)", fontWeight: 600 }}>
+                  {ticket.raisedDate || "—"}
+                </span>
+              </div>
               <div className="summary-item">
                 <span className="label">Assigned To</span>
                 <span className="value">{ticket.assignedTo}</span>
@@ -271,7 +262,6 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </select>
             </div>
 
-            {/* Confirmed Date — Admin and PC */}
             {isAdminOrPC && (
               <div className="form-group">
                 <label>Confirmed Date (PC fills after calling doer)</label>
@@ -284,7 +274,6 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </div>
             )}
 
-            {/* Revised Date — Admin/PC always, or Doer when revision */}
             {(isAdminOrPC || status === "Date Revision Requested") && (
               <div className="form-group">
                 <label>
@@ -312,7 +301,6 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </div>
             )}
 
-            {/* PC Remarks */}
             {isAdminOrPC && (
               <div className="form-group">
                 <label>PC Remarks</label>
@@ -326,7 +314,6 @@ export default function TicketUpdateModal({ show, onClose, ticket, currentUser, 
               </div>
             )}
 
-            {/* Doer Remarks */}
             {isAssignedDoer && (
               <div className="form-group">
                 <label>

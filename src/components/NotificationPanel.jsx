@@ -309,6 +309,11 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
                       </div>
 
                       <div className="notif-item-meta">
+                        {/* ✅ NEW: Raised date first with calendar icon */}
+                        <span className="notif-meta-raised">
+                          <i className="bi bi-calendar-plus"></i>
+                          Raised: {ticket.raisedDate || "—"}
+                        </span>
                         <span>
                           <i className="bi bi-calendar3"></i>
                           Due:{" "}
@@ -326,7 +331,7 @@ export default function NotificationPanel({ currentUser, onTicketClick }) {
                         {activeTab === "assigned" && (
                           <span>
                             <i className="bi bi-person"></i>
-                            Raised: {ticket.raisedBy}
+                            Raised By: {ticket.raisedBy}
                           </span>
                         )}
                         <span>

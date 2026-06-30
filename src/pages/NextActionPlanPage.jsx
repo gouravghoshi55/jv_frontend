@@ -9,7 +9,9 @@ function parseSheetDate(dateStr) {
   const str = String(dateStr).trim();
   if (!str) return null;
 
-  const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[, ]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  const match = str.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[, ]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/,
+  );
   if (match) {
     const [, dd, mm, yyyy, hh, mi, ss] = match;
     const d = new Date(
@@ -19,7 +21,7 @@ function parseSheetDate(dateStr) {
       hh ? parseInt(hh) : 23,
       mi ? parseInt(mi) : 59,
       ss ? parseInt(ss) : 59,
-      999
+      999,
     );
     return isNaN(d.getTime()) ? null : d;
   }
@@ -44,7 +46,15 @@ function parseDateForRange(dateStr) {
   const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (match) {
     const [, dd, mm, yyyy] = match;
-    const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), 0, 0, 0, 0);
+    const d = new Date(
+      parseInt(yyyy),
+      parseInt(mm) - 1,
+      parseInt(dd),
+      0,
+      0,
+      0,
+      0,
+    );
     return isNaN(d.getTime()) ? null : d;
   }
 
@@ -66,7 +76,7 @@ export default function NextActionPlanPage({ currentUser }) {
   const [filterAssignee, setFilterAssignee] = useState("");
   const [confirmDateFrom, setConfirmDateFrom] = useState("");
   const [confirmDateTo, setConfirmDateTo] = useState("");
-  const [showCompleted, setShowCompleted] = useState(false);  // ✅ NEW: Toggle for completed
+  const [showCompleted, setShowCompleted] = useState(false); // ✅ NEW: Toggle for completed
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
 
@@ -93,8 +103,12 @@ export default function NextActionPlanPage({ currentUser }) {
   const tickets = data || [];
   const users = usersData || [];
 
-  const dateFromObj = confirmDateFrom ? new Date(confirmDateFrom + "T00:00:00") : null;
-  const dateToObj = confirmDateTo ? new Date(confirmDateTo + "T23:59:59") : null;
+  const dateFromObj = confirmDateFrom
+    ? new Date(confirmDateFrom + "T00:00:00")
+    : null;
+  const dateToObj = confirmDateTo
+    ? new Date(confirmDateTo + "T23:59:59")
+    : null;
 
   // ✅ FIRST: Hide completed unless toggle is on
   const visibleTickets = tickets.filter((t) => {
@@ -121,19 +135,24 @@ export default function NextActionPlanPage({ currentUser }) {
       if (!confirmedDateObj) {
         matchesConfirmDate = false;
       } else {
-        if (dateFromObj && confirmedDateObj < dateFromObj) matchesConfirmDate = false;
-        if (dateToObj && confirmedDateObj > dateToObj) matchesConfirmDate = false;
+        if (dateFromObj && confirmedDateObj < dateFromObj)
+          matchesConfirmDate = false;
+        if (dateToObj && confirmedDateObj > dateToObj)
+          matchesConfirmDate = false;
       }
     }
 
-    return matchesSearch && matchesStatus && matchesAssignee && matchesConfirmDate;
+    return (
+      matchesSearch && matchesStatus && matchesAssignee && matchesConfirmDate
+    );
   });
 
   const isOverdue = (ticket) => {
     const statusLower = ticket.status?.toLowerCase();
     if (statusLower === "completed" || statusLower === "rejected") return false;
 
-    const checkDate = ticket.revisedDate || ticket.confirmedDate || ticket.desiredDate;
+    const checkDate =
+      ticket.revisedDate || ticket.confirmedDate || ticket.desiredDate;
     if (!checkDate) return false;
 
     const dueDate = parseSheetDate(checkDate);
@@ -147,7 +166,8 @@ export default function NextActionPlanPage({ currentUser }) {
     open: tickets.filter((t) => t.status === "Open").length,
     confirmed: tickets.filter((t) => t.status === "PC Confirmed").length,
     inProgress: tickets.filter((t) => t.status === "In Progress").length,
-    revision: tickets.filter((t) => t.status === "Date Revision Requested").length,
+    revision: tickets.filter((t) => t.status === "Date Revision Requested")
+      .length,
     completed: tickets.filter((t) => t.status === "Completed").length,
     rejected: tickets.filter((t) => t.status === "Rejected").length,
     overdue: tickets.filter(isOverdue).length,
@@ -192,7 +212,12 @@ export default function NextActionPlanPage({ currentUser }) {
     setConfirmDateTo("");
   };
 
-  const hasActiveFilters = search || filterStatus || filterAssignee || confirmDateFrom || confirmDateTo;
+  const hasActiveFilters =
+    search ||
+    filterStatus ||
+    filterAssignee ||
+    confirmDateFrom ||
+    confirmDateTo;
 
   const setQuickRange = (preset) => {
     const today = new Date();
@@ -230,9 +255,9 @@ export default function NextActionPlanPage({ currentUser }) {
     "Date Revision Requested": 2,
     "In Progress": 3,
     "PC Confirmed": 4,
-    "Open": 5,
-    "Rejected": 6,
-    "Completed": 7,
+    Open: 5,
+    Rejected: 6,
+    Completed: 7,
   };
 
   const sortedTickets = [...filteredTickets].sort((a, b) => {
@@ -250,7 +275,10 @@ export default function NextActionPlanPage({ currentUser }) {
       {/* Page Header */}
       <div className="page-header">
         <h2 className="page-title">
-          <i className="bi bi-ticket-perforated" style={{ marginRight: 10, color: "var(--accent-primary)" }}></i>
+          <i
+            className="bi bi-ticket-perforated"
+            style={{ marginRight: 10, color: "var(--accent-primary)" }}
+          ></i>
           Next Action Plan
         </h2>
         <span className="badge badge-blue">{sortedTickets.length} tickets</span>
@@ -317,7 +345,9 @@ export default function NextActionPlanPage({ currentUser }) {
           <option value="Open">Open</option>
           <option value="PC Confirmed">PC Confirmed</option>
           <option value="In Progress">In Progress</option>
-          <option value="Date Revision Requested">Date Revision Requested</option>
+          <option value="Date Revision Requested">
+            Date Revision Requested
+          </option>
           {showCompleted && <option value="Completed">Completed</option>}
           <option value="Rejected">Rejected</option>
           <option value="Overdue">Overdue</option>
@@ -349,7 +379,10 @@ export default function NextActionPlanPage({ currentUser }) {
             }}
           />
           <span>
-            <i className="bi bi-check-circle-fill" style={{ marginRight: 4 }}></i>
+            <i
+              className="bi bi-check-circle-fill"
+              style={{ marginRight: 4 }}
+            ></i>
             Show Completed ({stats.completed})
           </span>
         </label>
@@ -393,10 +426,21 @@ export default function NextActionPlanPage({ currentUser }) {
         </div>
 
         <div className="date-presets">
-          <button className="preset-btn" onClick={() => setQuickRange("today")}>Today</button>
-          <button className="preset-btn" onClick={() => setQuickRange("week")}>Last 7 Days</button>
-          <button className="preset-btn" onClick={() => setQuickRange("month")}>Last 30 Days</button>
-          <button className="preset-btn" onClick={() => setQuickRange("thisMonth")}>This Month</button>
+          <button className="preset-btn" onClick={() => setQuickRange("today")}>
+            Today
+          </button>
+          <button className="preset-btn" onClick={() => setQuickRange("week")}>
+            Last 7 Days
+          </button>
+          <button className="preset-btn" onClick={() => setQuickRange("month")}>
+            Last 30 Days
+          </button>
+          <button
+            className="preset-btn"
+            onClick={() => setQuickRange("thisMonth")}
+          >
+            This Month
+          </button>
         </div>
 
         {hasActiveFilters && (
@@ -410,8 +454,18 @@ export default function NextActionPlanPage({ currentUser }) {
         <div className="active-filter-info">
           <i className="bi bi-funnel-fill"></i>
           Showing tickets with Confirmed Date
-          {confirmDateFrom && <> from <strong>{confirmDateFrom}</strong></>}
-          {confirmDateTo && <> to <strong>{confirmDateTo}</strong></>}
+          {confirmDateFrom && (
+            <>
+              {" "}
+              from <strong>{confirmDateFrom}</strong>
+            </>
+          )}
+          {confirmDateTo && (
+            <>
+              {" "}
+              to <strong>{confirmDateTo}</strong>
+            </>
+          )}
         </div>
       )}
 
@@ -426,7 +480,11 @@ export default function NextActionPlanPage({ currentUser }) {
           <i className="bi bi-ticket-perforated"></i>
           <p>No tickets found</p>
           {hasActiveFilters && (
-            <button className="btn btn-ghost" onClick={handleClearFilters} style={{ marginTop: 10 }}>
+            <button
+              className="btn btn-ghost"
+              onClick={handleClearFilters}
+              style={{ marginTop: 10 }}
+            >
               Clear Filters
             </button>
           )}
@@ -451,8 +509,13 @@ export default function NextActionPlanPage({ currentUser }) {
                     <i className="bi bi-ticket-perforated-fill"></i>
                     <span>{ticket.ticketId}</span>
                   </div>
-                  <span className={`badge ${getStatusBadgeClass(displayStatus)}`}>
-                    <i className={getStatusIcon(displayStatus)} style={{ marginRight: 4 }}></i>
+                  <span
+                    className={`badge ${getStatusBadgeClass(displayStatus)}`}
+                  >
+                    <i
+                      className={getStatusIcon(displayStatus)}
+                      style={{ marginRight: 4 }}
+                    ></i>
                     {displayStatus}
                   </span>
                 </div>
@@ -473,8 +536,16 @@ export default function NextActionPlanPage({ currentUser }) {
                   </p>
                 </div>
 
-                {/* Meta Grid */}
+                {/* Meta Grid — ✅ Added Raised Date as first item */}
                 <div className="ticket-card-meta">
+                  <div className="meta-item meta-highlight">
+                    <span className="meta-label">
+                      <i className="bi bi-calendar-plus"></i> Raised
+                    </span>
+                    <span className="meta-value">
+                      {ticket.raisedDate || "—"}
+                    </span>
+                  </div>
                   <div className="meta-item">
                     <span className="meta-label">
                       <i className="bi bi-person"></i> Raised By
@@ -485,20 +556,39 @@ export default function NextActionPlanPage({ currentUser }) {
                     <span className="meta-label">
                       <i className="bi bi-person-check"></i> Assigned
                     </span>
-                    <span className="meta-value">{ticket.assignedTo || "—"}</span>
+                    <span className="meta-value">
+                      {ticket.assignedTo || "—"}
+                    </span>
                   </div>
                   <div className="meta-item">
                     <span className="meta-label">
                       <i className="bi bi-calendar3"></i> Desired
                     </span>
-                    <span className="meta-value">{ticket.desiredDate || "—"}</span>
+                    <span className="meta-value">
+                      {ticket.desiredDate || "—"}
+                    </span>
                   </div>
                   <div className="meta-item">
                     <span className="meta-label">
                       <i className="bi bi-calendar-check"></i> Confirmed
                     </span>
-                    <span className="meta-value">{ticket.confirmedDate || "—"}</span>
+                    <span className="meta-value">
+                      {ticket.confirmedDate || "—"}
+                    </span>
                   </div>
+                  {ticket.revisedDate && (
+                    <div className="meta-item">
+                      <span className="meta-label">
+                        <i className="bi bi-calendar-event"></i> Revised
+                      </span>
+                      <span
+                        className="meta-value"
+                        style={{ color: "var(--accent-yellow, #eab308)" }}
+                      >
+                        {ticket.revisedDate}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Revision Info (if any) */}
@@ -515,9 +605,13 @@ export default function NextActionPlanPage({ currentUser }) {
                 {/* Footer Tags */}
                 <div className="ticket-card-footer">
                   <div className="ticket-card-tags">
-                    <span className="badge badge-source">{ticket.sourceTab}</span>
+                    <span className="badge badge-source">
+                      {ticket.sourceTab}
+                    </span>
                     {ticket.stepName && (
-                      <span className="badge badge-step">{ticket.stepName}</span>
+                      <span className="badge badge-step">
+                        {ticket.stepName}
+                      </span>
                     )}
                   </div>
                   <div className="ticket-card-action">
